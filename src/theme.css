@@ -1,0 +1,48 @@
+/* Shared brand refresh — navy / orange / cream, inspired by the itsclear.in screenshot. */
+:root {
+  --navy: #101a3a;
+  --navy-2: #22305a;
+  --orange: #ef5b25;
+  --orange-soft: #fff0e6;
+  --gold: #c6922f;
+  --cream: #fffdf8;
+  --paper: #ffffff;
+  --sand: #fff4ea;
+  --ink: #101a3a;
+  --muted: #5f6880;
+  --line: rgba(16, 26, 58, .12);
+  --brand-sans: 'Manrope Variable', 'DM Sans Variable', system-ui, sans-serif;
+
+  /* desktop storefront variables */
+  --green: #101a3a;
+  --green-2: #22305a;
+  --green-dark: #0b1230;
+  --clay: #ef5b25;
+  --gold-light: #f7e3bb;
+  --serif: 'Manrope Variable', 'DM Sans Variable', system-ui, sans-serif;
+  --sans: 'DM Sans Variable', system-ui, sans-serif;
+
+  /* phone app variables */
+  --pa-cream: #fffdf8;
+  --pa-paper: #ffffff;
+  --pa-sand: #fff4ea;
+  --pa-ink: #101a3a;
+  --pa-muted: #5f6880;
+  --pa-green: #101a3a;
+  --pa-green-2: #ef5b25;
+  --pa-gold: #c6922f;
+  --pa-gold-light: #f7e3bb;
+  --pa-clay: #ef5b25;
+  --pa-line: rgba(16, 26, 58, .12);
+  --pa-serif: 'Manrope Variable', 'DM Sans Variable', system-ui, sans-serif;
+  --pa-sans: 'Manrope Variable', 'DM Sans Variable', system-ui, sans-serif;
+}
+
+.display, .pa-side-note h2, .pa-section-head h2, .pa-hero-copy h1,
+.pa-detail-body h1, .pa-sheet h2, .pa-order h1 {
+  font-family: var(--brand-sans);
+  font-weight: 800;
+  letter-spacing: -.055em;
+  line-height: 1.02;
+}
+.display em, .pa-side-note h2 em, .pa-order h1 em { color: var(--orange); font-style: normal; }
