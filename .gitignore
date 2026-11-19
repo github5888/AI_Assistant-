@@ -5,3 +5,29 @@ shots/
 .DS_Store
 .env.local
 .env.*.local
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+_flutter_scaffold/
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/captures/
+android/gradle/wrapper/gradle-wrapper.jar
+android/gradlew
+android/gradlew.bat
+android/GeneratedPluginRegistrant.java
+android/.cxx/
+android/key.properties
+android/**/*.keystore
+android/**/*.jks
+*.iml
+.idea/
+
+# Local secrets
+.env

@@ -1,0 +1,16 @@
+name: itsclear_app
+description: "itsclear™ exact-packaging ecommerce Android app UI — Flutter, UI only, no backend."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

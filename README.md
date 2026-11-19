@@ -1,110 +1,85 @@
-# itsclear™ — Full Ecommerce App UI
+# itsclear™ — Flutter Android app
 
-A complete, polished **ecommerce app UI** for the [itsclear.in](https://itsclear.in/) storefront, rebuilt around the **exact black-and-cream `itsclear™` Khapli Atta pouch** from the user-provided reference screenshot. This is **UI only**: no backend, payments, API calls, AI assistant or chat interface.
+**This is the actual Flutter / Dart Android app**, not the earlier React/Vite website. The archived web prototype lives in `legacy_web/` and is only a visual reference. It is **not** the deliverable and there is no PWA, browser preview, backend, API, real payment, chat, or AI assistant in this app.
 
-The default route is a native-style **phone app**. On desktop it appears inside a 390 × 844 device frame with a side note; on a phone-sized viewport it fills the screen. The responsive desktop storefront is also available at **`?web=1`**.
+The UI is a premium, phone-first `itsclear.in`-style storefront built around the exact black-and-cream Khapli pouch assets in `assets/images/`. All shopping flows are local UI state only.
 
-The **v3.1 polish** adds a cleaner hero, four quick actions, editorial story cards, a dark “clear standard” promise card, product ratings, viewer tabs and spec tiles, a lab verification seal, a gold-member badge, a secure-checkout note, an order progress pill and a floating desktop purity-score card — without changing the exact packaging or the UI-only scope.
+## What is inside
 
-The latest **v3.2 mobile premium polish** makes the phone experience feel more native and high-end: a frosted app bar, compact delivery chip, floating dark glass dock with an orange active capsule, Fraunces section headings, foil-style product tags, warmer card gradients, gold accents, refined buttons/forms and explicit 360px / 320px geometry. Exact packaging, all existing flows and the UI-only scope remain unchanged.
+- `lib/main.dart` — app entry, phone shell, frosted app bar, floating dark glass bottom dock.
+- `lib/theme.dart` — cream / navy / orange / gold premium palette and reusable typography.
+- `lib/data.dart` — products, exact pack images, lab tests, hero slides, bundles, ranking, timeline.
+- `lib/app_state.dart` — local cart, wishlist, coupon, calculator, viewer, checkout and order state.
+- `lib/widgets.dart` — reusable premium cards, pack image, pills, buttons, quick actions, trust chips.
+- `lib/screens/` — Home, Shop, Product, Search, 360° Viewer, Calculator, Lab, Basket, Checkout, Order Success, Tracking, Wishlist, Offers, Notifications, Orders and Profile.
+- `assets/images/` — the six exact isolated pouch PNGs plus the two lifestyle JPGs.
+- `android/` — native Android host using the Flutter Gradle Plugin.
+- `.github/workflows/apk.yml` — GitHub Actions workflow that generates a fresh Android runner, analyzes the Dart source and uploads a release APK.
+- `legacy_web/` — archived React/Vite implementation, kept only so the original design reference is not lost.
 
-## Exact packaging
+### Implemented UI flows
 
-The old jute-bori artwork is gone. `docs/reference-packaging.png` is the screenshot you supplied; `scripts/make_packs.py` isolates that real pouch with ImageMagick and produces six transparent PNGs in `public/images/`:
+Home hero carousel, quick actions, categories, best sellers, editorial stories, promise card and ranked list; Shop filters/sort/search; product gallery, sizes, quantity, overview/nutrition/lab tabs and 360° pack inspector; wishlist; basket with quantity controls, `CLEAR50` coupon and bill; checkout with editable address, delivery slots and payment method selection; order confirmation, order list and tracking timeline; NABL lab certificate and benchmarks; grain/roti calculator; offers, notifications and profile.
 
-| Asset | Use |
-| --- | --- |
-| `pack-khapli.png` | exact front pouch |
-| `pack-protein.png` | same pouch + 36g UI seal |
-| `pack-lineup.png` | 1kg / 5kg / 10kg lineup |
-| `pack-badges.png` | same pouch + lab-verification seals |
-| `pack-duo.png` | two-pouch protein duo |
-| `pack-handle.png` | zoomed carry-handle / wordmark |
+Everything is UI-only: no network calls, no database, no real order, no payment gateway and no assistant/chat.
 
-All product cards, categories, bundles, hero, 360° inspector, galleries, basket, checkout and catalog views use these exact pack shots. `docs/packaging-variants.png` shows the generated set. This is screenshot-derived artwork, not an invented AI pack or a generic atta bag.
+## Run locally on Windows
 
-## Run it
+Your earlier `flutter upgrade` error came from the extracted folder name `AI_Assistant--arena-188580a1-ai-assistant`: capitals and hyphens are not a valid Dart package name. Use a lowercase folder such as `itsclear_app`, or keep the explicit `--project-name itsclear_app` flag below. Also run the global `flutter upgrade` from outside the project folder, for example from `C:\Users\salon`.
 
-```bash
-npm install
-npm run dev        # http://localhost:5173  (0.0.0.0 for live preview)
-npm run build      # production build in dist/
-npm run preview    # serve the production build
+```powershell
+cd C:\Users\salon
+flutter upgrade
+flutter doctor
 
-# companion desktop storefront
-open http://localhost:5173/?web=1
+cd C:\Users\salon\Downloads
+ren AI_Assistant--arena-188580a1-ai-assistant itsclear_app
+cd itsclear_app
+
+# Repair/generate the Android runner without overwriting lib/ or pubspec.yaml.
+flutter create --platforms=android --project-name itsclear_app --org com.itsclear.app --no-overwrite .
+
+flutter pub get
+flutter analyze
+flutter run
+flutter build apk --release
 ```
 
-Requires Node.js 20.19+ and ImageMagick's `convert` / `mogrify` only if regenerating pack assets. Tested on Node 22.
+The APK appears at:
 
-## Full phone-app flows
-
-| Area | What it does |
-| --- | --- |
-| **Home** | Frosted app bar, delivery chip, floating glass dock, screenshot-style hero with exact pouch, orange harvest pill, navy/orange headline, 3-slide pack story, 360° inspector entry, trust pills, 4 quick actions, categories, rated best sellers with foil tags, editorial story cards, dark promise card, sale countdown, lab promo, calculator shortcut and ranked list. |
-| **Shop** | Search entry, `All / Khapli / Protein / Family / Bundle` filters, featured / price / rating sorting, 5-product grid and 3 monthly bundles. |
-| **360° inspector** | Drag-to-rotate pouch, live angle readout, six exact pack views, filmstrip, Front / Handle / Range tabs, cold-milling spec, 3 spec tiles and reset. |
-| **Product detail** | Gallery, rating row, pack sizes, quantity, wishlist, Overview / Nutrition / Lab report tabs, key facts, related products and add-to-basket. |
-| **Basket** | Free-shipping progress, quantity stepper, remove, `CLEAR50` coupon, bill breakdown and route into checkout. |
-| **Checkout** | Address form, delivery slots, UPI / card / cash selection, secure on-device note, order summary and place-order CTA. |
-| **Order + tracking** | Order confirmation with progress pill, EV delivery timeline, order history and back-to-home flow that clears the basket. |
-| **Zero-Maida Lab** | NABL batch certificate with verification seal, 6 passed tests, 5 benchmarks and QR verification mark. |
-| **Wishlist / Offers / Notifications / Profile** | Saved flours, coupons, harvest/delivery updates, account stats with gold-member badge, lab certificates, desktop link and FAQ. |
-| **Search + grain calculator** | Live product/bundle search and interactive family-size / rotis-per-day calculator. |
-
-Bottom-tab navigation stays visible on the five main tabs; detail flows use a back stack and hide the tab bar for a native feel. All cart, checkout, wishlist, coupon, calculator, gallery and order state is local UI state.
-
-## Desktop companion (`?web=1`)
-
-The earlier full desktop storefront is restyled in the same navy / orange / cream system and now uses the exact pouch in its 360° viewer, categories, best sellers, bundles, ranked list, catalog, product detail, cart and thumbnails. A floating **98/100 purity-score card** sits between the viewer and the shop card. It also has a dedicated **Checkout view** with address, delivery slot, payment method and order summary. Desktop hero copy mirrors the reference: “Discover The Purest Chakki Atta Online”.
-
-## Design system
-
-- **Palette:** warm white `#fffdf8`, paper `#ffffff`, deep navy `#101a3a`, burnt orange `#ef5b25`, wheat gold `#c6922f`.
-- **Type:** self-hosted **Manrope Variable** for bold editorial headings, **DM Sans Variable** for compact UI, and **Fraunces Variable** for premium section titles and promise-card copy.
-- **Native details:** frosted sticky app bar, floating dark glass bottom dock with orange active capsule, compact location chip, foil-style product tags, layered card shadows and gold hairlines.
-- **Details:** 390px device geometry plus verified 360px / 320px layouts, rounded cards, soft shadows, micro-transitions, safe-area padding, reduced-motion support and no horizontal overflow at phone width.
-
-## Verification
-
-- **30/30 v3.2 headless checks passed** — premium stylesheet, floating dock geometry, clean scroll/dock separation, exact pack assets, all three hero slides with no copy/pouch overlap, quick actions, editorial cards, ratings/foil tags, 360° viewer tabs/spec tiles, filters, search, product detail, size pricing, gallery, tabs, basket maths, `CLEAR50`, checkout, order/tracking, lab seal, profile badge, calculator, all five tabs at 390px, 360px / 320px overflow, desktop purity card, desktop checkout and zero browser errors.
-- Earlier work: **26/26** v3.1 checks, **25/25** exact-packaging checks, **78/78** desktop-storefront checks and **27/27** earlier phone-app checks.
-- Production build passes (`vite v8.3.8`), all six pack PNGs return `200`, and no console/page errors were captured.
-
-Main screenshots: `docs/preview.png` / `docs/preview-phone.png` (presentation), `docs/preview-phone-home.png`, `docs/preview-phone-premium.png` (lower-home premium cards + floating dock), `docs/preview-phone-360.png` (compact phone), `preview-phone-shop.png`, `preview-phone-product.png`, `preview-phone-viewer.png`, `preview-phone-basket.png`, `preview-phone-checkout.png`, `preview-phone-order.png`, `preview-phone-tracking.png`, `preview-phone-lab.png`, `preview-phone-profile.png`, `docs/preview-desktop.png` and `docs/preview-desktop-checkout.png`.
-
-## Project structure
-
-```
-index.html                  app shell, mobile viewport + theme colour
-vite.config.js              Vite + React, 0.0.0.0 host
-src/main.jsx                route switch: phone app by default, ?web=1 desktop
-src/PhoneApp.jsx            full phone ecommerce app: tabs, screens, flows + UI state
-src/phone.css               base phone app styles
-src/phone-theme.css         navy/orange theme + v3.1 phone polish, viewer/checkout/list-screen styles
-src/phone-premium.css       v3.2 mobile-first premium look: glass dock, app bar, cards, narrow phones
-src/theme.css               shared brand variables
-src/App.jsx                 desktop storefront home + global state
-src/Views.jsx               desktop Lab / catalog / product views
-src/CheckoutView.jsx        desktop checkout view
-src/data.js                 products, categories, lab tests, nutrition, reviews, pack paths
-src/styles.css              desktop design system + appended v3/v3.1 theme, purity-card and checkout CSS
-public/images/              6 exact pack PNGs + 2 lifestyle images
-scripts/make_packs.py       isolates the pouch from the reference screenshot
-docs/                      reference screenshot, packaging variants and all UI screenshots
+```text
+build/app/outputs/flutter-apk/app-release.apk
 ```
 
-> This is a front-end design demo only. Cart, checkout, search, coupon, orders and forms are local UI state; no payments or network requests are made.
+If Android Gradle complains about a version mismatch, delete `android/` and rerun the `flutter create --no-overwrite .` command above. Generated `gradlew`, `gradlew.bat`, `gradle-wrapper.jar` and `local.properties` are intentionally ignored by Git.
 
----
+## Build the APK on GitHub
 
-## Original repository project (unchanged)
+This sandbox has **no Flutter SDK, Dart SDK or Java**, so a local APK was not built here. The committed GitHub Actions workflow builds it instead:
 
-The repository originally contained a Streamlit-powered Generative AI Assistant using LangChain + Ollama (`scripts/simple_genai_app.py`). It is still present and untouched, but it is **not part of this storefront/app UI task**.
+1. Push to `arena/188580a1-ai-assistant`.
+2. Open the repository **Actions** tab and wait for **Build Android APK**.
+3. Download the `itsclear-release-apk` artifact from the completed run.
 
-```bash
-streamlit run scripts/simple_genai_app.py
+The workflow uses Flutter `stable`, regenerates the Android runner from that exact SDK, runs `flutter pub get`, `flutter analyze` and `flutter build apk --release`, then uploads `app-release.apk`. It does not need secrets or a release keystore because this is a UI demo with debug signing.
+
+## GitHub branch
+
+Active branch:
+
+```text
+arena/188580a1-ai-assistant
 ```
 
-* LangSmith tracking · structured `ChatPromptTemplate` · Streamlit Q&A UI · `OllamaLLM` with `gemma2:2b`.
-* Prerequisites: Python 3.10+, Ollama, LangSmith + LangChain (API key in `.env`).
+https://github.com/github5888/AI_Assistant-/tree/arena/188580a1-ai-assistant
+
+`main` is intentionally older. Switch the branch dropdown to `arena/188580a1-ai-assistant` to see the Flutter app. No PR/merge has been requested.
+
+## Scope reminder
+
+- Flutter / Dart Android app ✅
+- Exact black-and-cream `itsclear™` packaging assets ✅
+- Premium phone UI and full ecommerce interaction flow ✅
+- UI-only local state ✅
+- Website / PWA as deliverable ❌
+- Backend, API, real payment, chat or AI assistant ❌

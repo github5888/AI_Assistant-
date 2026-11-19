@@ -1,0 +1,71 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Analyze and build release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses
+
+      - name: Generate a matching Android runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/itsclear_runner
+          flutter create --no-pub --platforms=android \
+            --project-name itsclear_app \
+            --org com.itsclear.app \
+            --description "itsclear premium ecommerce app UI" \
+            /tmp/itsclear_runner
+          cp -a /tmp/itsclear_runner/android/. android/
+          cp -a /tmp/itsclear_runner/.metadata .metadata
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text(encoding='utf-8')
+          text = text.replace('android:label="itsclear_app"', 'android:label="itsclear™"')
+          manifest.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart source
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: itsclear-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
