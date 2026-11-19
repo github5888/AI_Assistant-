@@ -74,6 +74,27 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
+      - name: Annotate Flutter logs
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def escape(value: str) -> str:
+              return value.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+
+          for name in ('analyze.log', 'build.log'):
+              path = Path(name)
+              if not path.exists():
+                  continue
+              for line in path.read_text(errors='replace').splitlines():
+                  lowered = line.lower()
+                  if 'error' in lowered or 'failed' in lowered:
+                      print(f'::error title={name}::{escape(line)}')
+                  elif 'warning' in lowered:
+                      print(f'::warning title={name}::{escape(line)}')
+          PY
+
       - name: Upload Flutter logs
         if: always()
         uses: actions/upload-artifact@v4
