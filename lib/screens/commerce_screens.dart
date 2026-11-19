@@ -880,8 +880,8 @@ class OrderSuccessScreen extends StatelessWidget {
                   child: Text.rich(
                     TextSpan(
                       style: displayStyle(size: 28),
-                      children: const [
-                        TextSpan(text: 'Fresh flour is '),
+                      children: [
+                        const TextSpan(text: 'Fresh flour is '),
                         TextSpan(
                           text: 'on its way.',
                           style: displayStyle(size: 28, color: AppColors.orange),
