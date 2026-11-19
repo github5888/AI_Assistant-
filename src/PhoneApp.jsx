@@ -14,6 +14,7 @@ import {
 } from './data.js'
 import './phone.css'
 import './phone-theme.css'
+import './phone-premium.css'
 
 const money = (n) => `₹${Number(n).toLocaleString('en-IN')}`
 
@@ -588,7 +589,7 @@ export default function PhoneApp() {
   return (
     <div className="pa-stage">
       <div className="pa-stage-glow" />
-      <div className="pa-side-note"><span className="pa-eyebrow pa-eyebrow--light">itsclear™ · FULL ECOMMERCE APP UI</span><h2 className="display">The honest atta store, <em>in your pocket.</em></h2><p>A premium native-style shopping app: quick actions, editorial stories, 360° pack inspector, verified lab certificate, Basket, Checkout, Orders, Wishlist, Offers and Profile — built around the exact black-and-cream packaging from the reference site.</p><a href="?web=1">View desktop site <ArrowUpRight size={14} /></a></div>
+      <div className="pa-side-note"><span className="pa-eyebrow pa-eyebrow--light">itsclear™ · FULL ECOMMERCE APP UI</span><h2 className="display">The honest atta store, <em>in your pocket.</em></h2><p>A premium mobile-first shopping app: frosted app bar, floating glass dock, quick actions, editorial stories, 360° pack inspector, verified lab certificate, Basket, Checkout, Orders and Profile — built around the exact black-and-cream packaging from the reference site.</p><a href="?web=1">View desktop site <ArrowUpRight size={14} /></a></div>
       <div className="pa-device">
         <div className="pa-island" />
         <div className="pa-status"><span>9:41</span><div><span className="pa-signal">▮▮▮</span><span className="pa-wifi">◕</span><span className="pa-battery" /></div></div>

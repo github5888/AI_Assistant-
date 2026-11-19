@@ -4,7 +4,9 @@ A complete, polished **ecommerce app UI** for the [itsclear.in](https://itsclear
 
 The default route is a native-style **phone app**. On desktop it appears inside a 390 × 844 device frame with a side note; on a phone-sized viewport it fills the screen. The responsive desktop storefront is also available at **`?web=1`**.
 
-The latest **v3.1 polish** adds a cleaner hero, four quick actions, editorial story cards, a dark “clear standard” promise card, product ratings, viewer tabs and spec tiles, a lab verification seal, a gold-member badge, a secure-checkout note, an order progress pill and a floating desktop purity-score card — without changing the exact packaging or the UI-only scope.
+The **v3.1 polish** adds a cleaner hero, four quick actions, editorial story cards, a dark “clear standard” promise card, product ratings, viewer tabs and spec tiles, a lab verification seal, a gold-member badge, a secure-checkout note, an order progress pill and a floating desktop purity-score card — without changing the exact packaging or the UI-only scope.
+
+The latest **v3.2 mobile premium polish** makes the phone experience feel more native and high-end: a frosted app bar, compact delivery chip, floating dark glass dock with an orange active capsule, Fraunces section headings, foil-style product tags, warmer card gradients, gold accents, refined buttons/forms and explicit 360px / 320px geometry. Exact packaging, all existing flows and the UI-only scope remain unchanged.
 
 ## Exact packaging
 
@@ -39,7 +41,7 @@ Requires Node.js 20.19+ and ImageMagick's `convert` / `mogrify` only if regenera
 
 | Area | What it does |
 | --- | --- |
-| **Home** | Screenshot-style hero with exact pouch, orange harvest pill, navy/orange headline, 3-slide pack story, 360° inspector entry, delivery pin, trust pills, 4 quick actions, categories, rated best sellers, editorial story cards, dark promise card, sale countdown, lab promo, calculator shortcut and ranked list. |
+| **Home** | Frosted app bar, delivery chip, floating glass dock, screenshot-style hero with exact pouch, orange harvest pill, navy/orange headline, 3-slide pack story, 360° inspector entry, trust pills, 4 quick actions, categories, rated best sellers with foil tags, editorial story cards, dark promise card, sale countdown, lab promo, calculator shortcut and ranked list. |
 | **Shop** | Search entry, `All / Khapli / Protein / Family / Bundle` filters, featured / price / rating sorting, 5-product grid and 3 monthly bundles. |
 | **360° inspector** | Drag-to-rotate pouch, live angle readout, six exact pack views, filmstrip, Front / Handle / Range tabs, cold-milling spec, 3 spec tiles and reset. |
 | **Product detail** | Gallery, rating row, pack sizes, quantity, wishlist, Overview / Nutrition / Lab report tabs, key facts, related products and add-to-basket. |
@@ -59,16 +61,17 @@ The earlier full desktop storefront is restyled in the same navy / orange / crea
 ## Design system
 
 - **Palette:** warm white `#fffdf8`, paper `#ffffff`, deep navy `#101a3a`, burnt orange `#ef5b25`, wheat gold `#c6922f`.
-- **Type:** self-hosted **Manrope Variable** for bold editorial headings, **DM Sans Variable** for compact UI; Fraunces remains installed for legacy sections.
-- **Details:** 390px device geometry, rounded cards, hairline borders, soft shadows, micro-transitions, safe-area padding, reduced-motion support and no horizontal overflow at phone width.
+- **Type:** self-hosted **Manrope Variable** for bold editorial headings, **DM Sans Variable** for compact UI, and **Fraunces Variable** for premium section titles and promise-card copy.
+- **Native details:** frosted sticky app bar, floating dark glass bottom dock with orange active capsule, compact location chip, foil-style product tags, layered card shadows and gold hairlines.
+- **Details:** 390px device geometry plus verified 360px / 320px layouts, rounded cards, soft shadows, micro-transitions, safe-area padding, reduced-motion support and no horizontal overflow at phone width.
 
 ## Verification
 
-- **26/26 v3.1 headless checks passed** — exact pack assets, all three hero slides with no copy/pouch overlap, quick actions, editorial cards, ratings, 360° viewer tabs/spec tiles, filters, search, product detail, size pricing, gallery, tabs, basket maths, `CLEAR50`, checkout secure note, order progress/tracking, lab seal, profile badge, calculator, all five tabs, desktop purity card, desktop checkout, 390px overflow, images and zero browser errors.
-- Earlier work: **25/25** exact-packaging checks, **78/78** desktop-storefront checks and **27/27** earlier phone-app checks.
+- **30/30 v3.2 headless checks passed** — premium stylesheet, floating dock geometry, clean scroll/dock separation, exact pack assets, all three hero slides with no copy/pouch overlap, quick actions, editorial cards, ratings/foil tags, 360° viewer tabs/spec tiles, filters, search, product detail, size pricing, gallery, tabs, basket maths, `CLEAR50`, checkout, order/tracking, lab seal, profile badge, calculator, all five tabs at 390px, 360px / 320px overflow, desktop purity card, desktop checkout and zero browser errors.
+- Earlier work: **26/26** v3.1 checks, **25/25** exact-packaging checks, **78/78** desktop-storefront checks and **27/27** earlier phone-app checks.
 - Production build passes (`vite v8.3.8`), all six pack PNGs return `200`, and no console/page errors were captured.
 
-Main screenshots: `docs/preview.png` / `docs/preview-phone.png` (presentation), `docs/preview-phone-home.png`, `preview-phone-shop.png`, `preview-phone-product.png`, `preview-phone-viewer.png`, `preview-phone-basket.png`, `preview-phone-checkout.png`, `preview-phone-order.png`, `preview-phone-tracking.png`, `preview-phone-lab.png`, `preview-phone-profile.png`, `docs/preview-desktop.png` and `docs/preview-desktop-checkout.png`.
+Main screenshots: `docs/preview.png` / `docs/preview-phone.png` (presentation), `docs/preview-phone-home.png`, `docs/preview-phone-premium.png` (lower-home premium cards + floating dock), `docs/preview-phone-360.png` (compact phone), `preview-phone-shop.png`, `preview-phone-product.png`, `preview-phone-viewer.png`, `preview-phone-basket.png`, `preview-phone-checkout.png`, `preview-phone-order.png`, `preview-phone-tracking.png`, `preview-phone-lab.png`, `preview-phone-profile.png`, `docs/preview-desktop.png` and `docs/preview-desktop-checkout.png`.
 
 ## Project structure
 
@@ -79,6 +82,7 @@ src/main.jsx                route switch: phone app by default, ?web=1 desktop
 src/PhoneApp.jsx            full phone ecommerce app: tabs, screens, flows + UI state
 src/phone.css               base phone app styles
 src/phone-theme.css         navy/orange theme + v3.1 phone polish, viewer/checkout/list-screen styles
+src/phone-premium.css       v3.2 mobile-first premium look: glass dock, app bar, cards, narrow phones
 src/theme.css               shared brand variables
 src/App.jsx                 desktop storefront home + global state
 src/Views.jsx               desktop Lab / catalog / product views
