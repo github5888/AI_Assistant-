@@ -14,107 +14,89 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
-        children: [
-          AppTopBar(
-            title: 'My account',
-            subtitle: 'Verified member',
-            actions: [
-              RoundIconButton(
+    return ListView(
+      primary: false,
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        _ProfileCard(state: state),
+        _StatsRow(state: state),
+        SectionCard(
+          padding: const EdgeInsets.all(0),
+          child: Column(
+            children: [
+              InfoRow(
+                icon: Icons.shopping_bag,
+                title: 'My orders',
+                subtitle: '${state.orderIds.length} recent deliveries',
+                onTap: () => pushScreen(context, const OrdersScreen()),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.favorite_border,
+                title: 'Saved items',
+                subtitle: '${state.wishlist.length} flours',
+                onTap: () => pushScreen(context, const WishlistScreen()),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
                 icon: Icons.notifications_none,
+                title: 'Notifications',
+                subtitle: 'Harvest & delivery updates',
                 onTap: () => pushScreen(context, const NotificationsScreen()),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.confirmation_number,
+                title: 'Offers & coupons',
+                subtitle: 'CLEAR50 · up to 25% off',
+                onTap: () => pushScreen(context, const OffersScreen()),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.location_on,
+                title: 'Delivery addresses',
+                subtitle: 'Home · ${state.address.pin}',
+                onTap: () => pushScreen(context, const CheckoutScreen()),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.description,
+                title: 'Lab certificates',
+                subtitle: 'Batch #IC-0426',
+                onTap: () => state.goTab(2),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.help_outline,
+                title: 'Help & FAQ',
+                subtitle: 'Cold milling · delivery',
+                onTap: () => _showInfo(context, 'Help & FAQ', 'This is a UI-only demo. All answers are illustrative and no network request is made.'),
+              ),
+              const Divider(height: 1, color: AppColors.line),
+              InfoRow(
+                icon: Icons.info_outline,
+                title: 'About this app',
+                subtitle: 'Flutter UI · exact packaging',
+                onTap: () => _showInfo(context, 'About this app', 'A Flutter ecommerce app UI built around the exact itsclear™ pouch. No backend, payments, chat or AI assistant.'),
               ),
             ],
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                _ProfileCard(state: state),
-                _StatsRow(state: state),
-                SectionCard(
-                  padding: const EdgeInsets.all(0),
-                  child: Column(
-                    children: [
-                      InfoRow(
-                        icon: Icons.shopping_bag,
-                        title: 'My orders',
-                        subtitle: '${state.orderIds.length} recent deliveries',
-                        onTap: () => pushScreen(context, const OrdersScreen()),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.favorite_border,
-                        title: 'Saved items',
-                        subtitle: '${state.wishlist.length} flours',
-                        onTap: () => pushScreen(context, const WishlistScreen()),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.notifications_none,
-                        title: 'Notifications',
-                        subtitle: 'Harvest & delivery updates',
-                        onTap: () => pushScreen(context, const NotificationsScreen()),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.confirmation_number,
-                        title: 'Offers & coupons',
-                        subtitle: 'CLEAR50 · up to 25% off',
-                        onTap: () => pushScreen(context, const OffersScreen()),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.location_on,
-                        title: 'Delivery addresses',
-                        subtitle: 'Home · ${state.address.pin}',
-                        onTap: () => pushScreen(context, const CheckoutScreen()),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.description,
-                        title: 'Lab certificates',
-                        subtitle: 'Batch #IC-0426',
-                        onTap: () => state.goTab(2),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.help_outline,
-                        title: 'Help & FAQ',
-                        subtitle: 'Cold milling · delivery',
-                        onTap: () => _showInfo(context, 'Help & FAQ', 'This is a UI-only demo. All answers are illustrative and no network request is made.'),
-                      ),
-                      const Divider(height: 1, color: AppColors.line),
-                      InfoRow(
-                        icon: Icons.info_outline,
-                        title: 'About this app',
-                        subtitle: 'Flutter UI · exact packaging',
-                        onTap: () => _showInfo(context, 'About this app', 'A Flutter ecommerce app UI built around the exact itsclear™ pouch. No backend, payments, chat or AI assistant.'),
-                      ),
-                    ],
-                  ),
-                ),
-                const SectionHeader(
-                  eyebrow: 'From our kitchens',
-                  title: 'Loved by homes',
-                ),
-                _ReviewCard(),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: PrimaryButton(
-                    label: 'Open grain calculator',
-                    icon: Icons.arrow_forward,
-                    onTap: () => pushScreen(context, const CalculatorScreen()),
-                  ),
-                ),
-              ],
-            ),
+        ),
+        const SectionHeader(
+          eyebrow: 'From our kitchens',
+          title: 'Loved by homes',
+        ),
+        _ReviewCard(),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: PrimaryButton(
+            label: 'Open grain calculator',
+            icon: Icons.arrow_forward,
+            onTap: () => pushScreen(context, const CalculatorScreen()),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -211,9 +193,11 @@ class _ProfileCard extends StatelessWidget {
                       children: [
                         Icon(Icons.verified, size: 11, color: AppColors.goldLight),
                         SizedBox(width: 4),
-                        Text(
-                          'Verified buyer since 2024',
-                          style: TextStyle(fontSize: 8, color: AppColors.goldLight),
+                        Flexible(
+                          child: Text(
+                            'Verified buyer since 2024',
+                            style: TextStyle(fontSize: 8, color: AppColors.goldLight),
+                          ),
                         ),
                       ],
                     ),

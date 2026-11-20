@@ -39,9 +39,8 @@ class _ProductScreenState extends State<ProductScreen> {
     final wished = state.wishlist.contains(product.id);
     final gallery = _gallery;
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: 'Product details',

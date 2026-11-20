@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_state.dart';
 import 'data.dart';
@@ -13,6 +14,39 @@ Future<T?> pushScreen<T>(BuildContext context, Widget screen) {
 }
 
 void popScreen(BuildContext context) => Navigator.of(context).pop();
+
+const appSystemBars = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.dark,
+  systemNavigationBarColor: AppColors.cream,
+  systemNavigationBarIconBrightness: Brightness.dark,
+);
+
+/// System-safe frame shared by routes outside the main tab shell.
+class AppPage extends StatelessWidget {
+  const AppPage({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: appSystemBars,
+      child: Scaffold(
+        backgroundColor: AppColors.cream,
+        body: SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: SizedBox(width: double.infinity, child: child),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class AppTopBar extends StatelessWidget {
   final String title;
@@ -36,7 +70,7 @@ class AppTopBar extends StatelessWidget {
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
           decoration: const BoxDecoration(
             color: Color(0xF8FFFDF8),
             border: Border(
@@ -62,6 +96,8 @@ class AppTopBar extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -74,7 +110,9 @@ class AppTopBar extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           subtitle!,
-                          style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11, color: AppColors.muted),
                         ),
                       ),
                   ],
@@ -143,7 +181,7 @@ class RoundIconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onTap,
-    this.size = 34,
+    this.size = 44,
     this.color,
     this.filled = false,
   });
@@ -166,7 +204,7 @@ class RoundIconButton extends StatelessWidget {
         ),
         child: Icon(
           icon,
-          size: size * 0.48,
+          size: size * 0.44,
           color: color ?? (filled ? Colors.white : AppColors.ink),
         ),
       ),
@@ -197,8 +235,7 @@ class BottomDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 66,
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(22),
         child: BackdropFilter(
@@ -250,68 +287,73 @@ class _DockItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 40,
-                height: 30,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  gradient: selected ? AppGradients.orange : null,
-                  color: selected ? null : Colors.transparent,
-                  boxShadow: selected
-                      ? const [
-                          BoxShadow(
-                            color: Color(0x55EF5B25),
-                            blurRadius: 12,
-                            offset: Offset(0, 5),
-                          ),
-                        ]
-                      : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 40,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: selected ? AppGradients.orange : null,
+                    color: selected ? null : Colors.transparent,
+                    boxShadow: selected
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x55EF5B25),
+                              blurRadius: 12,
+                              offset: Offset(0, 5),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    spec.icon,
+                    size: 19,
+                    color: selected ? Colors.white : const Color(0x9AFFFFFF),
+                  ),
                 ),
-                child: Icon(
-                  spec.icon,
-                  size: 19,
-                  color: selected ? Colors.white : const Color(0x9AFFFFFF),
-                ),
-              ),
-              if (badge != null)
-                Positioned(
-                  right: -2,
-                  top: -5,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.navy, width: 1.5),
-                    ),
-                    child: Text(
-                      '$badge',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
+                if (badge != null)
+                  Positioned(
+                    right: -2,
+                    top: -5,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.orange,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.navy, width: 1.5),
+                      ),
+                      child: Text(
+                        '$badge',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            spec.label,
-            style: TextStyle(
-              fontSize: 8.5,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-              color: selected ? AppColors.amber : const Color(0x8CFFFFFF),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 3),
+            Text(
+              spec.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected ? AppColors.amber : const Color(0xCFFFFFFF),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -471,7 +513,8 @@ class PrimaryButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(height / 2),
       child: Container(
-        height: height,
+        constraints: BoxConstraints(minHeight: height),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(height / 2),
@@ -484,12 +527,15 @@ class PrimaryButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: textColor,
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
                 ),
               ),
               if (icon != null) ...[
@@ -685,7 +731,9 @@ class ProductCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Row(
+                      child: Wrap(
+                        spacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             money(product.sizes.first.price),
@@ -696,7 +744,6 @@ class ProductCard extends StatelessWidget {
                               color: AppColors.ink,
                             ),
                           ),
-                          const SizedBox(width: 4),
                           Text(
                             money(product.sizes.first.mrp),
                             style: const TextStyle(

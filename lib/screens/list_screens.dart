@@ -23,9 +23,8 @@ class ListScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: title,

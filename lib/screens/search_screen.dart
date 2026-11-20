@@ -14,9 +14,8 @@ class SearchScreen extends StatelessWidget {
     final state = AppScope.of(context);
     final results = state.searchResults;
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: 'Search',

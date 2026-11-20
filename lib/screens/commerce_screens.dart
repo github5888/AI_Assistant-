@@ -25,68 +25,50 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
-        children: [
-          AppTopBar(
-            title: 'Your basket',
-            subtitle: '${state.cart.length} items',
-            actions: [
-              RoundIconButton(
-                icon: Icons.add,
-                onTap: () => state.goTab(1),
+    return state.cart.isEmpty
+        ? _EmptyCart(onShop: () => state.goTab(1))
+        : ListView(
+            primary: false,
+            padding: const EdgeInsets.only(bottom: 24),
+            children: [
+              _FreeShipping(subtotal: state.cartSubtotal),
+              ...state.cart.map((line) => _CartLineCard(line: line)),
+              _CouponCard(
+                controller: _coupon,
+                applied: state.couponApplied,
+                onApply: () {
+                  final ok = state.applyCoupon(_coupon.text);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(ok ? 'CLEAR50 applied · ₹50 off' : 'Use code CLEAR50'),
+                      duration: const Duration(milliseconds: 900),
+                    ),
+                  );
+                },
+              ),
+              _BillCard(state: state),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: PrimaryButton(
+                  label: 'Proceed to checkout · ${money(state.cartTotal)}',
+                  icon: Icons.arrow_forward,
+                  onTap: () => pushScreen(context, const CheckoutScreen()),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock, size: 11, color: AppColors.muted),
+                  SizedBox(width: 5),
+                  Text(
+                    'Secure checkout · 100% purity guaranteed',
+                    style: TextStyle(fontSize: 8.5, color: AppColors.muted),
+                  ),
+                ],
               ),
             ],
-          ),
-          Expanded(
-            child: state.cart.isEmpty
-                ? _EmptyCart(onShop: () => state.goTab(1))
-                : ListView(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    children: [
-                      _FreeShipping(subtotal: state.cartSubtotal),
-                      ...state.cart.map((line) => _CartLineCard(line: line)),
-                      _CouponCard(
-                        controller: _coupon,
-                        applied: state.couponApplied,
-                        onApply: () {
-                          final ok = state.applyCoupon(_coupon.text);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(ok ? 'CLEAR50 applied · ₹50 off' : 'Use code CLEAR50'),
-                              duration: const Duration(milliseconds: 900),
-                            ),
-                          );
-                        },
-                      ),
-                      _BillCard(state: state),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: PrimaryButton(
-                          label: 'Proceed to checkout · ${money(state.cartTotal)}',
-                          icon: Icons.arrow_forward,
-                          onTap: () => pushScreen(context, const CheckoutScreen()),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.lock, size: 11, color: AppColors.muted),
-                          SizedBox(width: 5),
-                          Text(
-                            'Secure checkout · 100% purity guaranteed',
-                            style: TextStyle(fontSize: 8.5, color: AppColors.muted),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 }
 
@@ -96,36 +78,43 @@ class _EmptyCart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                color: AppColors.sand,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      color: AppColors.sand,
+                    ),
+                    child: const Icon(Icons.shopping_bag, size: 32, color: AppColors.orange),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Your basket is empty', style: displayStyle(size: 20)),
+                  const SizedBox(height: 7),
+                  const Text(
+                    'Good flour makes better rotis. Start with our bestsellers.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 10, color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 18),
+                  PrimaryButton(
+                    label: 'Explore attas',
+                    icon: Icons.arrow_forward,
+                    onTap: onShop,
+                  ),
+                ],
               ),
-              child: const Icon(Icons.shopping_bag, size: 32, color: AppColors.orange),
             ),
-            const SizedBox(height: 16),
-            Text('Your basket is empty', style: displayStyle(size: 20)),
-            const SizedBox(height: 7),
-            const Text(
-              'Good flour makes better rotis. Start with our bestsellers.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 10, color: AppColors.muted),
-            ),
-            const SizedBox(height: 18),
-            PrimaryButton(
-              label: 'Explore attas',
-              icon: Icons.arrow_forward,
-              onTap: onShop,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -426,9 +415,8 @@ class CheckoutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: 'Checkout',
@@ -849,9 +837,8 @@ class OrderSuccessScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(title: 'Order confirmed', subtitle: 'Fresh flour is on its way'),
           Expanded(
@@ -989,9 +976,8 @@ class TrackingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: 'Track order',

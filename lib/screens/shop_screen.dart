@@ -14,121 +14,99 @@ class ShopScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final visible = state.filteredProducts;
+    final textExtra = MediaQuery.textScalerOf(context).scale(12) - 12;
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
-        children: [
-          AppTopBar(
-            title: 'Shop the harvest',
-            subtitle: '${visible.length} stoneground flours',
-            actions: [
-              RoundIconButton(
-                icon: Icons.search,
-                onTap: () => pushScreen(context, const SearchScreen()),
+    return ListView(
+      primary: false,
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        SectionHeader(
+          eyebrow: 'Find your flour',
+          title: 'All products',
+          action: 'Search',
+          onAction: () => pushScreen(context, const SearchScreen()),
+        ),
+        SizedBox(
+          height: 40 + textExtra.clamp(0, 24).toDouble() * 2,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: categoryFilters.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 7),
+            itemBuilder: (context, index) {
+              return PillButton(
+                label: categoryFilters[index],
+                selected: state.categoryIndex == index,
+                onTap: () => state.setCategory(index),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Sort',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.muted,
+                ),
               ),
+              for (var index = 0; index < sortLabels.length; index++)
+                PillButton(
+                  label: sortLabels[index],
+                  selected: state.sortIndex == index,
+                  onTap: () => state.setSort(index),
+                ),
             ],
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                SectionHeader(
-                  eyebrow: 'Find your flour',
-                  title: 'All products',
-                  action: 'Search',
-                  onAction: () => pushScreen(context, const SearchScreen()),
-                ),
-                SizedBox(
-                  height: 38,
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categoryFilters.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 7),
-                    itemBuilder: (context, index) {
-                      return PillButton(
-                        label: categoryFilters[index],
-                        selected: state.categoryIndex == index,
-                        onTap: () => state.setCategory(index),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Sort',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ...List.generate(sortLabels.length, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: SizedBox(
-                            width: 78,
-                            child: PillButton(
-                              label: sortLabels[index],
-                              selected: state.sortIndex == index,
-                              onTap: () => state.setSort(index),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: visible.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.61,
-                    ),
-                    itemBuilder: (context, index) {
-                      final product = visible[index];
-                      return ProductCard(
-                        product: product,
-                        onTap: () => pushScreen(
-                          context,
-                          ProductScreen(product: product),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                SectionHeader(
-                  eyebrow: 'Better together',
-                  title: 'Monthly bundles',
-                  action: 'See all',
-                  onAction: () => state.setCategory(4),
-                ),
-                ...bundles.map((bundle) => _BundleCard(bundle: bundle)),
-                SectionHeader(
-                  eyebrow: 'Popular this month',
-                  title: 'Top ranked',
-                  action: 'Shop',
-                  onAction: () => state.setCategory(0),
-                ),
-                ...ranked.map((item) => _RankedRow(item: item)),
-              ],
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: visible.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              mainAxisExtent: 258 + textExtra.clamp(0, 24).toDouble() * 7,
             ),
+            itemBuilder: (context, index) {
+              final product = visible[index];
+              return ProductCard(
+                product: product,
+                onTap: () => pushScreen(
+                  context,
+                  ProductScreen(product: product),
+                ),
+              );
+            },
           ),
-        ],
-      ),
+        ),
+        SectionHeader(
+          eyebrow: 'Better together',
+          title: 'Monthly bundles',
+          action: 'See all',
+          onAction: () => state.setCategory(4),
+        ),
+        ...bundles.map((bundle) => _BundleCard(bundle: bundle)),
+        SectionHeader(
+          eyebrow: 'Popular this month',
+          title: 'Top ranked',
+          action: 'Shop',
+          onAction: () => state.setCategory(0),
+        ),
+        ...ranked.map((item) => _RankedRow(item: item)),
+      ],
     );
   }
 }

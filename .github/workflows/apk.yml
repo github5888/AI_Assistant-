@@ -62,6 +62,11 @@ jobs:
           set -o pipefail
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze.log
 
+      - name: Test phone layouts
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee test.log
+
       - name: Build release APK
         run: |
           set -o pipefail
@@ -83,13 +88,13 @@ jobs:
           def escape(value: str) -> str:
               return value.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
 
-          for name in ('analyze.log', 'build.log'):
+          for name in ('analyze.log', 'test.log', 'build.log'):
               path = Path(name)
               if not path.exists():
                   continue
               for line in path.read_text(errors='replace').splitlines():
                   lowered = line.lower()
-                  if 'error' in lowered or 'failed' in lowered:
+                  if 'error' in lowered or 'failed' in lowered or 'overflowed' in lowered:
                       print(f'::error title={name}::{escape(line)}')
                   elif 'warning' in lowered:
                       print(f'::warning title={name}::{escape(line)}')
@@ -102,5 +107,6 @@ jobs:
           name: flutter-build-logs
           path: |
             analyze.log
+            test.log
             build.log
           if-no-files-found: warn

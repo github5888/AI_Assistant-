@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_state.dart';
 import 'theme.dart';
@@ -24,6 +25,12 @@ class _ItsClearAppState extends State<ItsClearApp> {
   final AppState _state = AppState();
 
   @override
+  void dispose() {
+    _state.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppScope(
       notifier: _state,
@@ -31,37 +38,7 @@ class _ItsClearAppState extends State<ItsClearApp> {
         title: 'itsclear™',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
-        builder: (context, child) {
-          final width = MediaQuery.of(context).size.width;
-          if (width <= 520) return child!;
-          return Container(
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF22346A), Color(0xFF070C20)],
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(36),
-              child: SizedBox(
-                width: 390,
-                height: 844,
-                child: MediaQuery(
-                  data: MediaQuery.of(context).copyWith(
-                    size: const Size(390, 844),
-                  ),
-                  child: child!,
-                ),
-              ),
-            ),
-          );
-        },
-        home: AnimatedBuilder(
-          animation: _state,
-          builder: (_, __) => const PhoneShell(),
-        ),
+        home: const PhoneShell(),
       ),
     );
   }
@@ -89,11 +66,13 @@ class PhoneShell extends StatelessWidget {
       'Verified member',
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(gradient: AppGradients.cream),
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: appSystemBars,
+      child: Scaffold(
+        backgroundColor: AppColors.cream,
+        body: SafeArea(
+          bottom: keyboardVisible,
           child: Column(
             children: [
               AppTopBar(
@@ -103,25 +82,47 @@ class PhoneShell extends StatelessWidget {
                 actions: _actions(context, state),
               ),
               Expanded(
-                child: IndexedStack(
-                  index: state.tab,
-                  children: const [
-                    HomeScreen(),
-                    ShopScreen(),
-                    LabScreen(),
-                    CartScreen(),
-                    ProfileScreen(),
-                  ],
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: IndexedStack(
+                      sizing: StackFit.expand,
+                      index: state.tab,
+                      children: const [
+                        HomeScreen(),
+                        ShopScreen(),
+                        LabScreen(),
+                        CartScreen(),
+                        ProfileScreen(),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              BottomDock(
-                selectedIndex: state.tab,
-                cartCount: state.cartCount,
-                onTap: state.goTab,
               ),
             ],
           ),
         ),
+        bottomNavigationBar: keyboardVisible
+            ? null
+            : SafeArea(
+                top: false,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: 1,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: BottomDock(
+                      selectedIndex: state.tab,
+                      cartCount: state.cartCount,
+                      onTap: (index) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        state.goTab(index);
+                      },
+                    ),
+                  ),
+                ),
+              ),
       ),
     );
   }

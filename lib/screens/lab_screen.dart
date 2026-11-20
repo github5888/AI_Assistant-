@@ -9,134 +9,111 @@ class LabScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
-        children: [
-          AppTopBar(
-            title: 'Zero-Maida Lab',
-            subtitle: 'Batch #IC-0426',
-            actions: [
-              RoundIconButton(
-                icon: Icons.download,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Certificate is part of this UI demo'),
-                    duration: Duration(milliseconds: 900),
-                  ),
+    return ListView(
+      primary: false,
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: AppGradients.navy,
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33101A3A),
+                blurRadius: 26,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(13),
+                  color: const Color(0x33F7E3BB),
+                ),
+                child: const Icon(Icons.science, size: 22, color: AppColors.goldLight),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Proof, not promises.',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Every harvest batch is tested at an NABL-accredited lab. The certificate travels with your pack.',
+                      style: TextStyle(
+                        fontSize: 8.5,
+                        height: 1.45,
+                        color: Color(0xA6FFFFFF),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
-                    gradient: AppGradients.navy,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33101A3A),
-                        blurRadius: 26,
-                        offset: Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(13),
-                          color: const Color(0x33F7E3BB),
-                        ),
-                        child: const Icon(Icons.science, size: 22, color: AppColors.goldLight),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Proof, not promises.',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Every harvest batch is tested at an NABL-accredited lab. The certificate travels with your pack.',
-                              style: TextStyle(
-                                fontSize: 8.5,
-                                height: 1.45,
-                                color: Color(0xA6FFFFFF),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+        ),
+        _CertificateCard(),
+        SectionHeader(
+          eyebrow: 'Our standards',
+          title: 'Quality benchmarks',
+        ),
+        ..._benchmarks.map((row) => _BenchmarkRow(row: row)),
+        const SizedBox(height: 12),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: premiumCard(),
+          child: Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.line),
                 ),
-                _CertificateCard(),
-                SectionHeader(
-                  eyebrow: 'Our standards',
-                  title: 'Quality benchmarks',
-                ),
-                ..._benchmarks.map((row) => _BenchmarkRow(row: row)),
-                const SizedBox(height: 12),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: premiumCard(),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: const Icon(Icons.apps, size: 34, color: AppColors.navy),
+                child: const Icon(Icons.apps, size: 34, color: AppColors.navy),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Scan to verify',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.ink,
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Scan to verify',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                            SizedBox(height: 3),
-                            Text(
-                              'Batch #IC-0426 · NABL report IC-0426/28',
-                              style: TextStyle(fontSize: 8.5, color: AppColors.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(Icons.verified, size: 18, color: AppColors.green),
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Batch #IC-0426 · NABL report IC-0426/28',
+                      style: TextStyle(fontSize: 8.5, color: AppColors.muted),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const Icon(Icons.verified, size: 18, color: AppColors.green),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

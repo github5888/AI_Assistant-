@@ -29,228 +29,229 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 360;
+    final textExtra = (MediaQuery.textScalerOf(context).scale(20) - 20)
+        .clamp(0, 40).toDouble();
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 22),
-        children: [
-          const SizedBox(height: 10),
-          _LocationChip(pin: state.address.pin),
-          SizedBox(
-            height: 280,
-            child: PageView.builder(
-              controller: _heroController,
-              itemCount: heroSlides.length,
-              onPageChanged: state.setHeroIndex,
-              itemBuilder: (context, index) {
-                final slide = heroSlides[index];
-                return _HeroCard(
-                  slide: slide,
-                  onShop: () => pushScreen(
-                    context,
-                    ProductScreen(product: products[slide.productIndex]),
-                  ),
-                  onLab: () => state.goTab(2),
-                  onViewer: () => pushScreen(context, const ViewerScreen()),
-                  onReset: () {
-                    _heroController.jumpToPage(0);
-                    state.setHeroIndex(0);
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(heroSlides.length, (index) {
-              final active = state.heroIndex == index;
-              return InkWell(
-                onTap: () {
-                  _heroController.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 260),
-                    curve: Curves.easeOut,
-                  );
-                  state.setHeroIndex(index);
-                },
-                child: Container(
-                  width: active ? 18 : 6,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                  decoration: BoxDecoration(
-                    color: active ? AppColors.orange : const Color(0x33EF5B25),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+    return ListView(
+      primary: false,
+      padding: const EdgeInsets.only(bottom: 22),
+      children: [
+        const SizedBox(height: 10),
+        _LocationChip(pin: state.address.pin),
+        SizedBox(
+          height: (compact ? 304 : 286) + textExtra * 14,
+          child: PageView.builder(
+            controller: _heroController,
+            itemCount: heroSlides.length,
+            onPageChanged: state.setHeroIndex,
+            itemBuilder: (context, index) {
+              final slide = heroSlides[index];
+              return _HeroCard(
+                slide: slide,
+                onShop: () => pushScreen(
+                  context,
+                  ProductScreen(product: products[slide.productIndex]),
                 ),
+                onLab: () => state.goTab(2),
+                onViewer: () => pushScreen(context, const ViewerScreen()),
+                onReset: () {
+                  _heroController.jumpToPage(0);
+                  state.setHeroIndex(0);
+                },
               );
-            }),
+            },
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 36,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              children: const [
-                TrustChip(icon: Icons.local_shipping, label: 'Free shipping'),
-                TrustChip(icon: Icons.thermostat, label: 'Cold milled'),
-                TrustChip(icon: Icons.verified, label: 'Zero maida'),
-                TrustChip(icon: Icons.flash_on, label: '2-hour EV'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(heroSlides.length, (index) {
+            final active = state.heroIndex == index;
+            return InkWell(
+              onTap: () {
+                _heroController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOut,
+                );
+                state.setHeroIndex(index);
+              },
+              child: Container(
+                width: active ? 18 : 6,
+                height: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.orange : const Color(0x33EF5B25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 36,
+          child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 0.82,
+            scrollDirection: Axis.horizontal,
+            children: const [
+              TrustChip(icon: Icons.local_shipping, label: 'Free shipping'),
+              TrustChip(icon: Icons.thermostat, label: 'Cold milled'),
+              TrustChip(icon: Icons.verified, label: 'Zero maida'),
+              TrustChip(icon: Icons.flash_on, label: '2-hour EV'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          crossAxisCount: compact ? 2 : 4,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          mainAxisExtent: 96 + textExtra * 3,
+          children: [
+            QuickAction(
+              icon: Icons.near_me,
+              title: 'Track order',
+              subtitle: 'Live EV status',
+              onTap: () => pushScreen(context, const TrackingScreen()),
+            ),
+            QuickAction(
+              icon: Icons.verified,
+              title: 'Verify pack',
+              subtitle: 'Batch #IC-0426',
+              onTap: () => state.goTab(2),
+            ),
+            QuickAction(
+              icon: Icons.confirmation_number,
+              title: 'Offers',
+              subtitle: 'CLEAR50 is live',
+              onTap: () => pushScreen(context, const OffersScreen()),
+            ),
+            QuickAction(
+              icon: Icons.opacity,
+              title: 'Calculator',
+              subtitle: 'Rotis per kg',
+              onTap: () => pushScreen(context, const CalculatorScreen()),
+            ),
+          ],
+        ),
+        SectionHeader(
+          eyebrow: 'Find your flour',
+          title: 'Shop by category',
+          action: 'See all',
+          onAction: () => state.goTab(1),
+        ),
+        SizedBox(
+          height: 148,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return _CategoryCard(
+                category: category,
+                onTap: () {
+                  final filterIndex = categoryFilters.indexOf(category.filter);
+                  state.setCategory(filterIndex < 0 ? 0 : filterIndex);
+                  state.goTab(1);
+                },
+              );
+            },
+          ),
+        ),
+        SectionHeader(
+          eyebrow: 'The favourites',
+          title: 'Best sellers',
+          action: 'See all',
+          onAction: () => state.goTab(1),
+        ),
+        SizedBox(
+          height: 258 + textExtra * 5,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: products.take(4).length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return ProductCard(
+                product: product,
+                width: 166,
+                onTap: () => pushScreen(context, ProductScreen(product: product)),
+              );
+            },
+          ),
+        ),
+        SectionHeader(
+          eyebrow: 'Slow milled, honestly',
+          title: 'Made the clear way',
+          action: 'Our standard',
+          onAction: () => state.goTab(2),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
             children: [
-              QuickAction(
-                icon: Icons.near_me,
-                title: 'Track order',
-                subtitle: 'Live EV status',
-                onTap: () => pushScreen(context, const TrackingScreen()),
+              Expanded(
+                child: StoryCard(
+                  image: AppImages.chakki,
+                  eyebrow: '01 · Cold milled',
+                  title: 'Below 28°C',
+                  subtitle: 'Live enzymes intact',
+                  onTap: () => state.goTab(2),
+                ),
               ),
-              QuickAction(
-                icon: Icons.verified,
-                title: 'Verify pack',
-                subtitle: 'Batch #IC-0426',
-                onTap: () => state.goTab(2),
-              ),
-              QuickAction(
-                icon: Icons.confirmation_number,
-                title: 'Offers',
-                subtitle: 'CLEAR50 is live',
-                onTap: () => pushScreen(context, const OffersScreen()),
-              ),
-              QuickAction(
-                icon: Icons.opacity,
-                title: 'Calculator',
-                subtitle: 'Rotis per kg',
-                onTap: () => pushScreen(context, const CalculatorScreen()),
+              const SizedBox(width: 10),
+              Expanded(
+                child: StoryCard(
+                  image: AppImages.roti,
+                  eyebrow: '02 · Better yield',
+                  title: '36 rotis / kg',
+                  subtitle: 'Soft for 14 hours',
+                  onTap: () => pushScreen(context, const CalculatorScreen()),
+                ),
               ),
             ],
           ),
-          SectionHeader(
-            eyebrow: 'Find your flour',
-            title: 'Shop by category',
-            action: 'See all',
-            onAction: () => state.goTab(1),
+        ),
+        PromiseCard(onTap: () => state.goTab(2)),
+        _SaleCard(onTap: () => pushScreen(context, const OffersScreen())),
+        _PromoCard(
+          icon: Icons.science,
+          eyebrow: 'Zero-maida lab',
+          title: 'Proof, not promises.',
+          subtitle: 'NABL batch certificate · 6/6 tests passed',
+          onTap: () => state.goTab(2),
+        ),
+        _CalcPromo(onTap: () => pushScreen(context, const CalculatorScreen())),
+        SectionHeader(
+          eyebrow: 'Popular this month',
+          title: 'Top ranked',
+          action: 'Shop',
+          onAction: () => state.goTab(1),
+        ),
+        ...ranked.take(4).map((item) => _RankHomeRow(item: item)),
+        const SizedBox(height: 8),
+        const Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.eco, size: 12, color: AppColors.gold),
+              SizedBox(width: 5),
+              Text(
+                '100% whole grain · nothing else',
+                style: TextStyle(fontSize: 8.5, color: AppColors.muted),
+              ),
+            ],
           ),
-          SizedBox(
-            height: 148,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                return _CategoryCard(
-                  category: category,
-                  onTap: () {
-                    final filterIndex = categoryFilters.indexOf(category.filter);
-                    state.setCategory(filterIndex < 0 ? 0 : filterIndex);
-                    state.goTab(1);
-                  },
-                );
-              },
-            ),
-          ),
-          SectionHeader(
-            eyebrow: 'The favourites',
-            title: 'Best sellers',
-            action: 'See all',
-            onAction: () => state.goTab(1),
-          ),
-          SizedBox(
-            height: 272,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: products.take(4).length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final product = products[index];
-                return ProductCard(
-                  product: product,
-                  width: 166,
-                  onTap: () => pushScreen(context, ProductScreen(product: product)),
-                );
-              },
-            ),
-          ),
-          SectionHeader(
-            eyebrow: 'Slow milled, honestly',
-            title: 'Made the clear way',
-            action: 'Our standard',
-            onAction: () => state.goTab(2),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: StoryCard(
-                    image: AppImages.chakki,
-                    eyebrow: '01 · Cold milled',
-                    title: 'Below 28°C',
-                    subtitle: 'Live enzymes intact',
-                    onTap: () => state.goTab(2),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: StoryCard(
-                    image: AppImages.roti,
-                    eyebrow: '02 · Better yield',
-                    title: '36 rotis / kg',
-                    subtitle: 'Soft for 14 hours',
-                    onTap: () => pushScreen(context, const CalculatorScreen()),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          PromiseCard(onTap: () => state.goTab(2)),
-          _SaleCard(onTap: () => pushScreen(context, const OffersScreen())),
-          _PromoCard(
-            icon: Icons.science,
-            eyebrow: 'Zero-maida lab',
-            title: 'Proof, not promises.',
-            subtitle: 'NABL batch certificate · 6/6 tests passed',
-            onTap: () => state.goTab(2),
-          ),
-          _CalcPromo(onTap: () => pushScreen(context, const CalculatorScreen())),
-          SectionHeader(
-            eyebrow: 'Popular this month',
-            title: 'Top ranked',
-            action: 'Shop',
-            onAction: () => state.goTab(1),
-          ),
-          ...ranked.take(4).map((item) => _RankHomeRow(item: item)),
-          const SizedBox(height: 8),
-          const Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.eco, size: 12, color: AppColors.gold),
-                SizedBox(width: 5),
-                Text(
-                  '100% whole grain · nothing else',
-                  style: TextStyle(fontSize: 8.5, color: AppColors.muted),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -340,59 +341,77 @@ class _HeroCard extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            left: 18,
-            top: 16,
-            width: 200,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFF6EC), Color(0xFFFFF0DF)],
-                    ),
-                    border: Border.all(color: const Color(0x47C6922F)),
-                  ),
-                  child: Text(
-                    slide.pill,
-                    maxLines: 2,
-                    style: const TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                      height: 1.3,
-                      color: AppColors.orange,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 9),
-                Text.rich(
-                  TextSpan(
-                    style: displayStyle(size: 22),
+                Expanded(
+                  child: Row(
                     children: [
-                      TextSpan(text: '${slide.title} '),
-                      TextSpan(
-                        text: slide.accent,
-                        style: displayStyle(size: 22, color: AppColors.orange),
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(999),
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFFF6EC), Color(0xFFFFF0DF)],
+                                ),
+                                border: Border.all(color: const Color(0x47C6922F)),
+                              ),
+                              child: Text(
+                                slide.pill,
+                                maxLines: 2,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.6,
+                                  height: 1.3,
+                                  color: AppColors.orange,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 9),
+                            Text.rich(
+                              TextSpan(
+                                style: displayStyle(size: 22),
+                                children: [
+                                  TextSpan(text: '${slide.title} '),
+                                  TextSpan(
+                                    text: slide.accent,
+                                    style: displayStyle(size: 22, color: AppColors.orange),
+                                  ),
+                                  TextSpan(text: '\n${slide.tail}'),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 7),
+                            Text(
+                              slide.description,
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                height: 1.35,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      TextSpan(text: '\n${slide.tail}'),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 3,
+                        child: PackImage(asset: slide.image, height: 200),
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  slide.description,
-                  maxLines: 3,
-                  style: const TextStyle(
-                    fontSize: 8,
-                    height: 1.45,
-                    color: AppColors.muted,
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Flexible(
@@ -406,72 +425,59 @@ class _HeroCard extends StatelessWidget {
                     const SizedBox(width: 5),
                     Flexible(
                       child: _SmallAction(
-                        label: 'The zero-maida lab',
+                        label: 'Zero-maida lab',
                         primary: false,
                         onTap: onLab,
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 9),
+                InkWell(
+                  onTap: onViewer,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 34),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xF2FFFFFF),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.line),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x14101A3A), blurRadius: 14, offset: Offset(0, 5)),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.refresh, size: 12, color: AppColors.ink),
+                        const SizedBox(width: 6),
+                        const Expanded(
+                          child: Text(
+                            'Drag 360° to inspect authentic packaging',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onReset,
+                          child: const Text(
+                            'Reset',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.orange,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
-            ),
-          ),
-          Positioned(
-            right: 0,
-            bottom: 42,
-            child: PackImage(
-              asset: slide.image,
-              width: 142,
-              height: 208,
-            ),
-          ),
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: 10,
-            child: InkWell(
-              onTap: onViewer,
-              child: Container(
-                height: 30,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xF2FFFFFF),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: AppColors.line),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x14101A3A), blurRadius: 14, offset: Offset(0, 5)),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.refresh, size: 12, color: AppColors.ink),
-                    const SizedBox(width: 6),
-                    const Expanded(
-                      child: Text(
-                        'Drag 360° to inspect authentic packaging',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: onReset,
-                      child: const Text(
-                        'Reset',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.orange,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -498,7 +504,7 @@ class _SmallAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(999),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
           gradient: primary ? AppGradients.orange : null,
@@ -514,7 +520,7 @@ class _SmallAction extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 7.6,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: primary ? Colors.white : AppColors.ink,
                 ),

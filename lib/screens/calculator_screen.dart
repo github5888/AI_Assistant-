@@ -11,9 +11,8 @@ class CalculatorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: 'Grain calculator',

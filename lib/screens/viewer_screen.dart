@@ -16,9 +16,8 @@ class ViewerScreen extends StatelessWidget {
     final angle = state.viewerAngle.abs().round() % 360;
     final rotation = math.sin(state.viewerAngle * math.pi / 180) * 0.28;
 
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      body: Column(
+    return AppPage(
+      child: Column(
         children: [
           AppTopBar(
             title: '360° pack inspector',
