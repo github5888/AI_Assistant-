@@ -100,20 +100,24 @@ class _ProductScreenState extends State<ProductScreen> {
                           children: [
                             Stars(value: product.rating, size: 11),
                             const SizedBox(width: 6),
-                            Text(
-                              '${product.rating.toStringAsFixed(1)} · ${product.reviews} verified reviews',
-                              style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+                            Flexible(
+                              child: Text(
+                                '${product.rating.toStringAsFixed(1)} · ${product.reviews} verified reviews',
+                                style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 14),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               money(size.price),
                               style: displayStyle(size: 30),
                             ),
-                            const SizedBox(width: 9),
                             Text(
                               money(size.mrp),
                               style: const TextStyle(
@@ -122,7 +126,6 @@ class _ProductScreenState extends State<ProductScreen> {
                                 decoration: TextDecoration.lineThrough,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                               decoration: BoxDecoration(
