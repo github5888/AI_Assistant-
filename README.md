@@ -2,7 +2,7 @@
 
 **This is the actual Flutter / Dart Android app**, not the earlier React/Vite website. The archived web prototype lives in `legacy_web/` and is only a visual reference. It is **not** the deliverable and there is no PWA, browser preview, backend, API, real payment, chat, or AI assistant in this app.
 
-The UI is a premium, phone-first `itsclear.in`-style storefront built around the exact black-and-cream Khapli pouch assets in `assets/images/`. All shopping flows are local UI state only.
+The UI is a premium, phone-first `itsclear.in`-style storefront built around the exact black-and-cream Khapli pouch assets in `assets/images/`. The layout follows the phone’s screen size and system insets, including cutouts, gesture navigation and the on-screen keyboard. All shopping flows are local UI state only.
 
 ## What is inside
 
@@ -61,7 +61,7 @@ This sandbox has **no Flutter SDK, Dart SDK or Java**, so a local APK was not bu
 2. Open the repository **Actions** tab and wait for **Build Android APK**.
 3. Download the `itsclear-release-apk` artifact from the completed run.
 
-The workflow uses Flutter `stable`, regenerates the Android runner from that exact SDK, runs `flutter pub get`, `flutter analyze` and `flutter build apk --release`, then uploads `app-release.apk`. It does not need secrets or a release keystore because this is a UI demo with debug signing.
+The workflow uses Flutter `stable`, regenerates the Android runner from that exact SDK, runs `flutter pub get`, `flutter analyze`, `flutter test` (including phone layouts), and `flutter build apk --release`, then uploads `app-release.apk`. It does not need secrets or a release keystore because this is a UI demo with debug signing.
 
 ## GitHub branch
 

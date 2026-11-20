@@ -124,121 +124,85 @@ class _CertificateCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: premiumCard(radius: 18),
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Batch Purity Certificate',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                          SizedBox(height: 3),
-                          Text(
-                            'NABL · REPORT IC-0426/28',
-                            style: TextStyle(fontSize: 8.5, color: AppColors.muted),
-                          ),
-                        ],
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Batch Purity Certificate',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                        ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF6EE),
-                        borderRadius: BorderRadius.circular(999),
+                      SizedBox(height: 3),
+                      Text(
+                        'NABL · REPORT IC-0426/28',
+                        style: TextStyle(fontSize: 8.5, color: AppColors.muted),
                       ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.check_circle, size: 11, color: AppColors.green),
-                          SizedBox(width: 4),
-                          Text(
-                            'PASSED',
-                            style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 14),
-                const Row(
-                  children: [
-                    Expanded(child: _Meta(label: 'BATCH', value: '#IC-0426')),
-                    Expanded(child: _Meta(label: 'MILLED', value: '17 Nov 2026')),
-                    Expanded(child: _Meta(label: 'PEAK TEMP', value: '27.4°C')),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ...labTests.map((test) => _TestRow(test: test)),
-                const SizedBox(height: 8),
-                const Row(
-                  children: [
-                    Icon(Icons.check_circle, size: 13, color: AppColors.green),
-                    SizedBox(width: 6),
-                    Text(
-                      '6 of 6 parameters passed · nothing added',
-                      style: TextStyle(
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF6EE),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 11, color: AppColors.green),
+                      SizedBox(width: 4),
+                      Text(
+                        'NABL VERIFIED',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.green,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          Positioned(
-            right: 12,
-            top: 72,
-            child: Transform.rotate(
-              angle: -0.2,
-              child: Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xEBEAF6EE),
-                  border: Border.all(
-                    color: const Color(0x59357A45),
-                    style: BorderStyle.solid,
+            const SizedBox(height: 14),
+            const Row(
+              children: [
+                Expanded(child: _Meta(label: 'BATCH', value: '#IC-0426')),
+                Expanded(child: _Meta(label: 'MILLED', value: '17 Nov 2026')),
+                Expanded(child: _Meta(label: 'PEAK TEMP', value: '27.4°C')),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...labTests.map((test) => _TestRow(test: test)),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.check_circle, size: 13, color: AppColors.green),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '6 of 6 parameters passed · nothing added',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.verified, size: 17, color: AppColors.green),
-                    Text(
-                      'NABL\nVERIFIED',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 6.2,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
