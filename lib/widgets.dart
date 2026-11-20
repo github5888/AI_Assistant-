@@ -721,9 +721,13 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Stars(value: product.rating, size: 9),
                     const SizedBox(width: 4),
-                    Text(
-                      '${product.rating.toStringAsFixed(1)} · ${product.reviews} reviews',
-                      style: const TextStyle(fontSize: 7.2, color: AppColors.muted),
+                    Flexible(
+                      child: Text(
+                        '${product.rating.toStringAsFixed(1)} · ${product.reviews} reviews',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 8, color: AppColors.muted),
+                      ),
                     ),
                   ],
                 ),
@@ -808,6 +812,7 @@ class QuickAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 5),
         decoration: premiumCard(radius: 18),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 32,
@@ -823,6 +828,8 @@ class QuickAction extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 9,

@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount: compact ? 2 : 4,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
-          mainAxisExtent: 96 + textExtra * 3,
+          mainAxisExtent: 108 + textExtra * 4,
           children: [
             QuickAction(
               icon: Icons.near_me,
@@ -377,6 +377,8 @@ class _HeroCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 9),
                             Text.rich(
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
                               TextSpan(
                                 style: displayStyle(size: 22),
                                 children: [
@@ -390,14 +392,16 @@ class _HeroCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 7),
-                            Text(
-                              slide.description,
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                height: 1.35,
-                                color: AppColors.muted,
+                            Flexible(
+                              child: Text(
+                                slide.description,
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  height: 1.35,
+                                  color: AppColors.muted,
+                                ),
                               ),
                             ),
                           ],

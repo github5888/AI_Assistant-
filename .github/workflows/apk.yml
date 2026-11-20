@@ -92,9 +92,14 @@ jobs:
               path = Path(name)
               if not path.exists():
                   continue
-              for line in path.read_text(errors='replace').splitlines():
+              lines = path.read_text(errors='replace').splitlines()
+              for i, line in enumerate(lines):
                   lowered = line.lower()
-                  if 'error' in lowered or 'failed' in lowered or 'overflowed' in lowered:
+                  if name == 'test.log':
+                      if 'overflowed' in lowered or line.strip() in ('Expected: null',) or '[E]' in line:
+                          details = '\n'.join(lines[max(0, i - 1):i + 5])
+                          print(f'::error title=Phone layout test::{escape(details)}')
+                  elif 'error' in lowered or 'failed' in lowered:
                       print(f'::error title={name}::{escape(line)}')
                   elif 'warning' in lowered:
                       print(f'::warning title={name}::{escape(line)}')
