@@ -60,6 +60,7 @@ void main() {
     await tester.tap(find.text('Shop the harvest'));
     await tester.pumpAndSettle();
 
+    expect(tester.takeException(), isNull, reason: 'product layout');
     expect(find.text('Product details'), findsOneWidget);
     expect(tester.getTopLeft(find.byType(AppTopBar)).dy, 30);
     final add = find.textContaining('Add ·');
@@ -67,7 +68,7 @@ void main() {
     await tester.tap(add);
     await tester.pumpAndSettle();
     expect(find.text('Your basket'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+    expect(tester.takeException(), isNull, reason: 'populated basket layout');
   });
 
   testWidgets('basket dock yields space to the Android keyboard', (tester) async {

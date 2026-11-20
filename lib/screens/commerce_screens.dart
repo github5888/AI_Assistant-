@@ -56,13 +56,15 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              const Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 5,
                 children: [
                   Icon(Icons.lock, size: 11, color: AppColors.muted),
-                  SizedBox(width: 5),
                   Text(
                     'Secure checkout · 100% purity guaranteed',
+                    textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 8.5, color: AppColors.muted),
                   ),
                 ],
