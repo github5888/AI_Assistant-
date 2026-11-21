@@ -84,12 +84,11 @@ class _HarvestBanner extends StatelessWidget {
         Expanded(flex: 5, child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('STONEGROUND ATTA', style: TextStyle(color: Color(0xFF8E421E),
+            const Text('COLD MILLED', maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: Color(0xFF8E421E),
               fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .9)),
             const SizedBox(height: 5),
-            Text('Fresh flour.\nMilled slow.', style: displayStyle(size: 23)),
-            const SizedBox(height: 5),
-            const Text('Khapli & high-protein atta', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+            Text('Fresh atta', maxLines: 2, overflow: TextOverflow.ellipsis, style: displayStyle(size: 20)),
             const SizedBox(height: 7),
             FilledButton(
               style: FilledButton.styleFrom(
@@ -99,12 +98,12 @@ class _HarvestBanner extends StatelessWidget {
                 minimumSize: const Size(0, 42),
                 textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
               ),
-              onPressed: onBrowse, child: const Text('Shop the harvest'),
+              onPressed: onBrowse, child: const Text('Shop atta', textAlign: TextAlign.center),
             ),
           ],
         )),
         const SizedBox(width: 7),
-        const Expanded(flex: 3, child: PackImage(asset: AppImages.khapli, height: 126)),
+        const Expanded(flex: 3, child: PackImage(asset: AppImages.khapli, height: 104)),
       ]),
     );
   }

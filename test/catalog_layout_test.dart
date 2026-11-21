@@ -69,10 +69,14 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(_dock('Shop'));
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'increased text on live shop');
     final first = tester.getRect(find.byKey(const ValueKey('a')));
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('b')), 50,
+      scrollable: find.descendant(of: find.byKey(const PageStorageKey('live-shop')), matching: find.byType(Scrollable)).first);
     final second = tester.getRect(find.byKey(const ValueKey('b')));
+    final currentFirst = tester.getRect(find.byKey(const ValueKey('a')));
     expect(first.width, greaterThan(first.height));
-    expect(second.top, greaterThan(first.bottom));
+    expect(second.top, greaterThan(currentFirst.bottom));
     expect(tester.takeException(), isNull);
   });
 
