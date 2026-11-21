@@ -36,9 +36,6 @@ class LiveHomeScreen extends StatelessWidget {
               pushScreen(context, ProductScreen(product: product));
             }
           })),
-          const SliverToBoxAdapter(child: Padding(
-            padding: EdgeInsets.only(top: 8), child: CatalogCategoryStrip(browseFromHome: true),
-          )),
           SliverToBoxAdapter(child: CatalogHeading(
             title: 'Featured flours',
             trailing: TextButton(onPressed: browse, child: const Text('View all')),
@@ -46,6 +43,8 @@ class LiveHomeScreen extends StatelessWidget {
           if (state.catalogError || featured.isEmpty)
             const SliverToBoxAdapter(child: CatalogStatus(emptyMessage: 'No products are listed right now.')),
           CatalogSliverGrid(products: featured),
+          const SliverToBoxAdapter(child: CatalogHeading(title: 'Shop by category')),
+          const SliverToBoxAdapter(child: CatalogCategoryStrip(browseFromHome: true)),
           SliverToBoxAdapter(child: Padding(
             padding: const EdgeInsets.fromLTRB(14, 18, 14, 22),
             child: Material(
@@ -84,7 +83,7 @@ class _HarvestBanner extends StatelessWidget {
         Expanded(flex: 5, child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('COLD MILLED', maxLines: 1, overflow: TextOverflow.ellipsis,
+            const Text('STONEGROUND', maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(color: Color(0xFF8E421E),
               fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .9)),
             const SizedBox(height: 5),
