@@ -16,7 +16,7 @@ The default API origin is `https://itsclear.in`. Use `--dart-define=ITSCLEAR_API
 
 ## Mobile storefront layout
 
-Home puts search, a compact product banner and the featured grid before category shortcuts and secondary links. Home and Shop share a lazy, responsive catalog grid. On standard phone widths, cards fit two across with a compact Add button next to the price; larger system fonts use a wider horizontal card. Product thumbnails are decoded near their display size to reduce scrolling memory use. `test/catalog_layout_test.dart` checks layout and basket interaction on narrow phone viewports.
+Home opens with a swipeable illustrated banner, quick actions and photo-led category browsing before the compact featured grid. Shop puts search and filters above the same card layout. Home and Shop share a lazy, responsive catalog grid. On standard phone widths, cards fit two across with a compact Add button next to the price; larger system fonts use a wider horizontal card. Product thumbnails are decoded near their display size to reduce scrolling memory use. `test/catalog_layout_test.dart` checks layout and basket interaction on narrow phone viewports.
 
 ## Customer sign-in
 

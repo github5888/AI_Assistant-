@@ -46,15 +46,24 @@ void _phone(WidgetTester tester, Size size, {double scale = 1}) {
 
 void main() {
   for (final size in [const Size(320, 640), const Size(360, 720), const Size(412, 840)]) {
-    testWidgets('featured products start in the first screen and fit two across at $size', (tester) async {
+    testWidgets('illustrated home intro precedes a compact two-column grid at $size', (tester) async {
       _phone(tester, size);
       await tester.pumpWidget(ItsClearApp(api: _api()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Search atta, flour or pack size'), findsOneWidget);
+      final hero = find.byKey(const ValueKey('home-hero-carousel'));
+      expect(hero.hitTestable(), findsOneWidget);
+      expect(find.text('Shop the harvest').hitTestable(), findsOneWidget);
+      expect(find.text('2-hour EV'), findsNothing);
+      final homeScroll = find.descendant(
+        of: find.byKey(const PageStorageKey('live-home')),
+        matching: find.byType(Scrollable),
+      ).first;
+      await tester.scrollUntilVisible(find.text('Shop by category'), 120, scrollable: homeScroll);
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('a')), 120, scrollable: homeScroll);
       final first = tester.getRect(find.byKey(const ValueKey('a')));
       final second = tester.getRect(find.byKey(const ValueKey('b')));
-      expect(first.top, lessThan(size.height * .66));
+      expect(tester.getTopLeft(find.text('Shop by category')).dy, lessThan(first.top));
       expect(first.top, second.top);
       expect(first.height, lessThanOrEqualTo(240));
       expect(first.right, lessThan(second.left));
@@ -62,6 +71,19 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('restored hero swipes to the next illustration', (tester) async {
+    _phone(tester, const Size(360, 720));
+    await tester.pumpWidget(ItsClearApp(api: _api()));
+    await tester.pumpAndSettle();
+    final hero = find.byKey(const ValueKey('home-hero-carousel'));
+    final controller = tester.widget<PageView>(hero).controller!;
+    expect(controller.page, closeTo(0, 0.01));
+    await tester.drag(hero, const Offset(-290, 0));
+    await tester.pumpAndSettle();
+    expect(controller.page, closeTo(1, 0.01));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('larger system text gets wider cards without overflowing', (tester) async {
     _phone(tester, const Size(320, 640), scale: 1.6);

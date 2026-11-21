@@ -10,26 +10,12 @@ import 'list_screens.dart';
 import 'product_screen.dart';
 import 'viewer_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final PageController _heroController = PageController(initialPage: 0);
-
-  @override
-  void dispose() {
-    _heroController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final compact = MediaQuery.sizeOf(context).width < 360;
     final textExtra = (MediaQuery.textScalerOf(context).scale(20) - 20)
         .clamp(0, 40).toDouble();
 
@@ -37,157 +23,15 @@ class _HomeScreenState extends State<HomeScreen> {
       primary: false,
       padding: const EdgeInsets.only(bottom: 22),
       children: [
-        const SizedBox(height: 10),
-        if (!state.isLive) _LocationChip(pin: state.address.pin),
-        SizedBox(
-          height: (compact ? 304 : 286) + textExtra * 14,
-          child: PageView.builder(
-            controller: _heroController,
-            itemCount: heroSlides.length,
-            onPageChanged: state.setHeroIndex,
-            itemBuilder: (context, index) {
-              final slide = heroSlides[index];
-              return _HeroCard(
-                slide: slide,
-                onShop: () {
-                  final product = state.featuredPack(slide.productIndex);
-                  if (product == null) {
-                    state.setCategory(0);
-                    state.goTab(1);
-                  } else {
-                    pushScreen(context, ProductScreen(product: product));
-                  }
-                },
-                onLab: state.isLive ? null : () => state.goTab(2),
-                onViewer: state.isLive ? null : () => pushScreen(context, const ViewerScreen()),
-                onReset: () {
-                  _heroController.jumpToPage(0);
-                  state.setHeroIndex(0);
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(heroSlides.length, (index) {
-            final active = state.heroIndex == index;
-            return InkWell(
-              onTap: () {
-                _heroController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOut,
-                );
-                state.setHeroIndex(index);
-              },
-              child: Container(
-                width: active ? 18 : 6,
-                height: 4,
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                decoration: BoxDecoration(
-                  color: active ? AppColors.orange : const Color(0x33EF5B25),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 36,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            children: const [
-              TrustChip(icon: Icons.local_shipping, label: 'Free shipping'),
-              TrustChip(icon: Icons.thermostat, label: 'Cold milled'),
-              TrustChip(icon: Icons.verified, label: 'Zero maida'),
-              TrustChip(icon: Icons.flash_on, label: '2-hour EV'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          crossAxisCount: compact || state.isLive ? 2 : 4,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          mainAxisExtent: 108 + textExtra * 4,
-          children: [
-            if (!state.isLive) QuickAction(
-              icon: Icons.near_me,
-              title: 'Track order',
-              subtitle: 'Live EV status',
-              onTap: () => pushScreen(context, const TrackingScreen()),
-            ),
-            if (state.isLive)
-              QuickAction(
-                icon: Icons.receipt_long,
-                title: 'Your orders',
-                subtitle: 'History & receipts',
-                onTap: () => state.goTab(2),
-              )
-            else
-            QuickAction(
-              icon: Icons.verified,
-              title: 'Verify pack',
-              subtitle: 'Batch #IC-0426',
-              onTap: () => state.goTab(2),
-            ),
-            if (!state.isLive) QuickAction(
-              icon: Icons.confirmation_number,
-              title: 'Offers',
-              subtitle: 'CLEAR50 is live',
-              onTap: () => pushScreen(context, const OffersScreen()),
-            ),
-            QuickAction(
-              icon: Icons.opacity,
-              title: 'Calculator',
-              subtitle: 'Rotis per kg',
-              onTap: () => pushScreen(context, const CalculatorScreen()),
-            ),
-          ],
-        ),
-        SectionHeader(
-          eyebrow: 'Find your flour',
-          title: 'Shop by category',
-          action: 'See all',
-          onAction: () => state.goTab(1),
-        ),
-        SizedBox(
-          height: 148,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return _CategoryCard(
-                category: category,
-                onTap: () {
-                  final filterIndex = categoryFilters.indexOf(category.filter);
-                  state.setCategory(filterIndex < 0 ? 0 : filterIndex);
-                  state.goTab(1);
-                },
-              );
-            },
-          ),
-        ),
+        const HomeIntro(),
         SectionHeader(
           eyebrow: 'The favourites',
-          title: state.isLive ? 'Featured flours' : 'Best sellers',
+          title: 'Best sellers',
           action: 'See all',
           onAction: () => state.goTab(1),
         ),
-        if (state.isLive && (state.catalogError || state.featuredProducts.isEmpty))
-          const CatalogStatus(emptyMessage: 'No products are listed right now.'),
         if (state.featuredProducts.isNotEmpty) SizedBox(
-          height: (state.isLive ? 340 : 258) + textExtra * 6,
+          height: 258 + textExtra * 6,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
@@ -197,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final product = state.featuredProducts[index];
               return ProductCard(
                 product: product,
-                width: state.isLive ? (MediaQuery.sizeOf(context).width * .62).clamp(200, 255).toDouble() : 166,
+                width: 166,
                 onTap: () => pushScreen(context, ProductScreen(product: product)),
               );
             },
@@ -266,6 +110,186 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 8.5, color: AppColors.muted),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Illustrated carousel, shortcuts and category rail shared by both storefronts.
+class HomeIntro extends StatefulWidget {
+  const HomeIntro({super.key});
+
+  @override
+  State<HomeIntro> createState() => _HomeIntroState();
+}
+
+class _HomeIntroState extends State<HomeIntro> {
+  final PageController _heroController = PageController(initialPage: 0);
+
+  @override
+  void dispose() {
+    _heroController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final compact = MediaQuery.sizeOf(context).width < 360;
+    final textExtra = (MediaQuery.textScalerOf(context).scale(20) - 20)
+        .clamp(0, 40).toDouble();
+
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        if (!state.isLive) _LocationChip(pin: state.address.pin),
+        SizedBox(
+          height: (compact ? 304 : 286) + textExtra * 14,
+          child: PageView.builder(
+            key: const ValueKey('home-hero-carousel'),
+            controller: _heroController,
+            itemCount: heroSlides.length,
+            onPageChanged: state.setHeroIndex,
+            itemBuilder: (context, index) {
+              final slide = heroSlides[index];
+              return _HeroCard(
+                slide: slide,
+                onShop: () {
+                  final product = state.featuredPack(slide.productIndex);
+                  if (product == null) {
+                    state.setCategory(0);
+                    state.goTab(1);
+                  } else {
+                    pushScreen(context, ProductScreen(product: product));
+                  }
+                },
+                onLab: state.isLive ? null : () => state.goTab(2),
+                onViewer: state.isLive ? null : () => pushScreen(context, const ViewerScreen()),
+                onReset: () {
+                  _heroController.jumpToPage(0);
+                  state.setHeroIndex(0);
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(heroSlides.length, (index) {
+            final active = state.heroIndex == index;
+            return InkWell(
+              onTap: () {
+                _heroController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOut,
+                );
+                state.setHeroIndex(index);
+              },
+              child: Container(
+                width: active ? 18 : 6,
+                height: 4,
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.orange : const Color(0x33EF5B25),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 36 + textExtra,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            children: [
+              if (!state.isLive)
+                const TrustChip(icon: Icons.local_shipping, label: 'Free shipping')
+              else if (state.storeConfig case final config?)
+                TrustChip(icon: Icons.local_shipping,
+                  label: 'Free delivery from ${money(config.freeDeliveryThreshold)}'),
+              const TrustChip(icon: Icons.thermostat, label: 'Cold milled'),
+              const TrustChip(icon: Icons.verified, label: 'Zero maida'),
+              if (!state.isLive) const TrustChip(icon: Icons.flash_on, label: '2-hour EV'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          crossAxisCount: compact || state.isLive ? 2 : 4,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          mainAxisExtent: 108 + textExtra * 4,
+          children: [
+            if (!state.isLive) QuickAction(
+              icon: Icons.near_me,
+              title: 'Track order',
+              subtitle: 'Live EV status',
+              onTap: () => pushScreen(context, const TrackingScreen()),
+            ),
+            if (state.isLive)
+              QuickAction(
+                icon: Icons.receipt_long,
+                title: 'Your orders',
+                subtitle: 'History & receipts',
+                onTap: () => state.goTab(2),
+              )
+            else
+            QuickAction(
+              icon: Icons.verified,
+              title: 'Verify pack',
+              subtitle: 'Batch #IC-0426',
+              onTap: () => state.goTab(2),
+            ),
+            if (!state.isLive) QuickAction(
+              icon: Icons.confirmation_number,
+              title: 'Offers',
+              subtitle: 'CLEAR50 is live',
+              onTap: () => pushScreen(context, const OffersScreen()),
+            ),
+            QuickAction(
+              icon: Icons.opacity,
+              title: 'Calculator',
+              subtitle: 'Rotis per kg',
+              onTap: () => pushScreen(context, const CalculatorScreen()),
+            ),
+          ],
+        ),
+        SectionHeader(
+          eyebrow: 'Find your flour',
+          title: 'Shop by category',
+          action: 'See all',
+          onAction: () {
+            state.setCategory(0);
+            state.goTab(1);
+          },
+        ),
+        SizedBox(
+          height: 148 + textExtra * 2,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return _CategoryCard(
+                category: category,
+                onTap: () {
+                  final filterIndex = categoryFilters.indexOf(category.filter);
+                  state.setCategory(filterIndex < 0 ? 0 : filterIndex);
+                  state.goTab(1);
+                },
+              );
+            },
           ),
         ),
       ],

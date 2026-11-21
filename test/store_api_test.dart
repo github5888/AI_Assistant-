@@ -149,7 +149,7 @@ void main() {
     expect(find.text('Shop itsclear™'), findsNothing);
     expect(find.text('Zero-maida lab'), findsNothing);
     expect(find.text('Lab'), findsNothing);
-    await tester.tap(find.text('Shop atta'));
+    await tester.tap(find.text('Shop the harvest'));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Add ·'));
     await tester.pumpAndSettle();

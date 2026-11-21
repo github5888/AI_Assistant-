@@ -72,8 +72,7 @@ class CatalogSearchBar extends StatelessWidget {
 }
 
 class CatalogCategoryStrip extends StatelessWidget {
-  const CatalogCategoryStrip({super.key, this.browseFromHome = false});
-  final bool browseFromHome;
+  const CatalogCategoryStrip({super.key});
   static const _icons = [Icons.grid_view_rounded, Icons.grass_rounded,
     Icons.bolt_rounded, Icons.shopping_bag_outlined, Icons.inventory_2_outlined];
 
@@ -89,16 +88,13 @@ class CatalogCategoryStrip extends StatelessWidget {
         itemCount: categoryFilters.length,
         separatorBuilder: (_, __) => const SizedBox(width: 7),
         itemBuilder: (context, index) {
-          final selected = !browseFromHome && state.categoryIndex == index;
+          final selected = state.categoryIndex == index;
           return Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Material(
             color: selected ? AppColors.ink : AppColors.paper,
             shape: StadiumBorder(side: BorderSide(color: selected ? AppColors.ink : AppColors.line)),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () {
-                state.setCategory(index);
-                if (browseFromHome) state.goTab(1);
-              },
+              onTap: () => state.setCategory(index),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 11),
                 child: Row(children: [

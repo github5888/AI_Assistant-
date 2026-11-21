@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
-import '../data.dart';
-import '../theme.dart';
 import '../widgets.dart';
-import 'calculator_screen.dart';
-import 'product_screen.dart';
+import 'home_screen.dart';
 import 'storefront_layout.dart';
 
 class LiveHomeScreen extends StatelessWidget {
@@ -27,15 +24,7 @@ class LiveHomeScreen extends StatelessWidget {
         primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          const SliverToBoxAdapter(child: CatalogSearchBar()),
-          SliverToBoxAdapter(child: _HarvestBanner(onBrowse: () {
-            final product = state.featuredPack(0);
-            if (product == null) {
-              browse();
-            } else {
-              pushScreen(context, ProductScreen(product: product));
-            }
-          })),
+          const SliverToBoxAdapter(child: HomeIntro()),
           SliverToBoxAdapter(child: CatalogHeading(
             title: 'Featured flours',
             trailing: TextButton(onPressed: browse, child: const Text('View all')),
@@ -43,67 +32,9 @@ class LiveHomeScreen extends StatelessWidget {
           if (state.catalogError || featured.isEmpty)
             const SliverToBoxAdapter(child: CatalogStatus(emptyMessage: 'No products are listed right now.')),
           CatalogSliverGrid(products: featured),
-          const SliverToBoxAdapter(child: CatalogHeading(title: 'Shop by category')),
-          const SliverToBoxAdapter(child: CatalogCategoryStrip(browseFromHome: true)),
-          SliverToBoxAdapter(child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 18, 14, 22),
-            child: Material(
-              color: AppColors.paper,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppColors.line)),
-              child: Column(children: [
-                InfoRow(icon: Icons.receipt_long_outlined, title: 'Your orders',
-                  subtitle: 'History and receipts', onTap: () => state.goTab(2)),
-                const Divider(height: 1, color: AppColors.line),
-                InfoRow(icon: Icons.calculate_outlined, title: 'Grain calculator',
-                  subtitle: 'Find your monthly pack', onTap: () => pushScreen(context, const CalculatorScreen())),
-              ]),
-            ),
-          )),
+          const SliverToBoxAdapter(child: SizedBox(height: 22)),
         ],
       ),
-    );
-  }
-}
-
-class _HarvestBanner extends StatelessWidget {
-  const _HarvestBanner({required this.onBrowse});
-  final VoidCallback onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFCEEE2),
-        border: Border.all(color: const Color(0xFFEED9C6)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 12, 10, 10),
-      child: Row(children: [
-        Expanded(flex: 5, child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('STONEGROUND', maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Color(0xFF8E421E),
-              fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: .9)),
-            const SizedBox(height: 5),
-            Text('Fresh atta', maxLines: 2, overflow: TextOverflow.ellipsis, style: displayStyle(size: 20)),
-            const SizedBox(height: 7),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.ink,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-                minimumSize: const Size(0, 42),
-                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
-              ),
-              onPressed: onBrowse, child: const Text('Shop atta', textAlign: TextAlign.center),
-            ),
-          ],
-        )),
-        const SizedBox(width: 7),
-        const Expanded(flex: 3, child: PackImage(asset: AppImages.khapli, height: 104)),
-      ]),
     );
   }
 }
