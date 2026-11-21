@@ -216,12 +216,14 @@ class BottomDock extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
   final int cartCount;
+  final bool showOrders;
 
   const BottomDock({
     super.key,
     required this.selectedIndex,
     required this.onTap,
     required this.cartCount,
+    this.showOrders = false,
   });
 
   static const _items = <_DockSpec>[
@@ -244,7 +246,9 @@ class BottomDock extends StatelessWidget {
             decoration: const BoxDecoration(gradient: AppGradients.dock),
             child: Row(
               children: List.generate(_items.length, (index) {
-                final spec = _items[index];
+                final spec = showOrders && index == 2
+                    ? const _DockSpec(Icons.receipt_long, 'Orders')
+                    : _items[index];
                 final selected = index == selectedIndex;
                 final badge = index == 3 && cartCount > 0 ? cartCount : null;
                 return Expanded(
@@ -769,8 +773,12 @@ class ProductCard extends StatelessWidget {
                     ),
                     InkWell(
                       onTap: () {
-                        final available = product.sizes.where((size) => size.inStock);
-                        final added = available.isNotEmpty && state.addToCart(product, available.first, 1);
+                        final size = product.sizes.first;
+                        if (!size.inStock) {
+                          onTap();
+                          return;
+                        }
+                        final added = state.addToCart(product, size, 1);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(added ? '${product.name} added to basket' : 'This quantity is not available.'),

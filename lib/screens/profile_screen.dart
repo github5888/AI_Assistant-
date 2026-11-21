@@ -4,6 +4,7 @@ import '../app_state.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'calculator_screen.dart';
+import 'checkout_flow.dart';
 import 'commerce_screens.dart';
 import 'list_screens.dart';
 
@@ -15,12 +16,24 @@ class ProfileScreen extends StatelessWidget {
     final state = AppScope.of(context);
 
     if (state.isLive) {
-      final config = state.storeConfig;
       return ListView(
         primary: false,
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          const SectionHeader(eyebrow: 'Store connection', title: 'Guest profile'),
+          const SectionHeader(eyebrow: 'Your account', title: 'Guest profile'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: PrimaryButton(
+              label: 'Sign in',
+              icon: Icons.login,
+              onTap: () => pushScreen(context, const SignInScreen()),
+            ),
+          ),
+          SectionCard(child: InfoRow(
+            icon: Icons.receipt_long,
+            title: 'My orders & receipts',
+            onTap: () => state.goTab(2),
+          )),
           StoreNotice(
             message: switch (state.storeOnline) {
               true => 'Live store is connected.',
@@ -29,11 +42,6 @@ class ProfileScreen extends StatelessWidget {
             },
             onRetry: state.isLoadingCatalog ? null : state.refreshStore,
           ),
-          if (config != null) StoreNotice(message:
-            'Website payment options: ${config.codEnabled ? "cash on delivery available" : "cash on delivery unavailable"}; '
-            '${config.onlinePaymentsEnabled ? "online payment available" : "online payment unavailable"}.'
-          ),
-          StoreNotice(message: 'Sign-in and order history are not available in this app yet. Saved items stay in this session.'),
           SectionCard(child: InfoRow(
             icon: Icons.favorite_border,
             title: 'Saved items',

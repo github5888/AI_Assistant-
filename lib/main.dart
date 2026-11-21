@@ -6,6 +6,7 @@ import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'screens/commerce_screens.dart';
+import 'screens/checkout_flow.dart';
 import 'screens/home_screen.dart';
 import 'screens/lab_screen.dart';
 import 'screens/list_screens.dart';
@@ -72,10 +73,10 @@ class PhoneShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final subtitles = <String>[
-      state.isLive ? 'Shop itsclear™' : 'Lucknow, Uttar Pradesh',
+    final subtitles = <String?>[
+      state.isLive ? null : 'Lucknow, Uttar Pradesh',
       '${state.filteredProducts.length} stoneground flours',
-      state.isLive ? 'Product information' : 'Batch #IC-0426',
+      state.isLive ? 'Tracking & receipts' : 'Batch #IC-0426',
       '${state.cartCount} items',
       state.isLive ? 'Guest' : 'Verified member',
     ];
@@ -90,7 +91,8 @@ class PhoneShell extends StatelessWidget {
           child: Column(
             children: [
               AppTopBar(
-                title: state.tab == 0 && state.isLive ? 'Online store' : _titles[state.tab],
+                title: state.isLive && state.tab == 0 ? 'Online store'
+                    : state.isLive && state.tab == 2 ? 'Your orders' : _titles[state.tab],
                 subtitle: subtitles[state.tab],
                 showLogo: state.tab == 0,
                 actions: _actions(context, state),
@@ -103,12 +105,12 @@ class PhoneShell extends StatelessWidget {
                     child: IndexedStack(
                       sizing: StackFit.expand,
                       index: state.tab,
-                      children: const [
-                        HomeScreen(),
-                        ShopScreen(),
-                        LabScreen(),
-                        CartScreen(),
-                        ProfileScreen(),
+                      children: [
+                        const HomeScreen(),
+                        const ShopScreen(),
+                        state.isLive ? const InAppOrdersTab() : const LabScreen(),
+                        const CartScreen(),
+                        const ProfileScreen(),
                       ],
                     ),
                   ),
@@ -129,6 +131,7 @@ class PhoneShell extends StatelessWidget {
                     child: BottomDock(
                       selectedIndex: state.tab,
                       cartCount: state.cartCount,
+                      showOrders: state.isLive,
                       onTap: (index) {
                         FocusManager.instance.primaryFocus?.unfocus();
                         state.goTab(index);

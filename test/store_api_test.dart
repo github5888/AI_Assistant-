@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:itsclear_app/app_state.dart';
 import 'package:itsclear_app/main.dart';
+import 'package:itsclear_app/widgets.dart';
 import 'package:itsclear_app/store_api.dart';
 
 Map<String, Object?> productFixture({List<String> images = const []}) => {
@@ -127,4 +128,71 @@ void main() {
     expect(find.text('Khapli Ancient Atta'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('live Basket opens native checkout and never places a local order', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 760);
+    addTearDown(tester.view.reset);
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      expect(request.method, 'GET');
+      return switch (request.url.path) {
+        '/api/products' => jsonAnswer([productFixture()]),
+        '/api/products/itsclear-khapli-ancient' => jsonAnswer(productFixture()),
+        '/api/config' => jsonAnswer(configFixture),
+        _ => jsonAnswer({'status': 'online', 'dbStatus': 'connected'}),
+      };
+    }));
+    await tester.pumpWidget(ItsClearApp(api: api));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Online store'), findsOneWidget);
+    expect(find.text('Shop itsclear™'), findsNothing);
+    expect(find.text('Zero-maida lab'), findsNothing);
+    expect(find.text('Lab'), findsNothing);
+    await tester.tap(find.text('Shop the harvest'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Add ·'));
+    await tester.pumpAndSettle();
+    expect(find.text('Your basket'), findsOneWidget);
+    expect(find.text('Open store website'), findsNothing);
+    await tester.tap(find.text('Continue to checkout'));
+    await tester.pumpAndSettle();
+    expect(find.text('Checkout'), findsOneWidget);
+    expect(find.text('Contact & address'), findsOneWidget);
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('Place order'), 300, scrollable: scrollable);
+    expect(find.text('Currently disabled by the store'), findsOneWidget);
+    final submit = find.widgetWithText(FilledButton, 'Place order');
+    expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('live Orders and Profile expose receipt and sign-in screens', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.reset);
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      return switch (request.url.path) {
+        '/api/products' => jsonAnswer([productFixture()]),
+        '/api/config' => jsonAnswer(configFixture),
+        _ => jsonAnswer({'status': 'online', 'dbStatus': 'connected'}),
+      };
+    }));
+    await tester.pumpWidget(ItsClearApp(api: api));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byType(BottomDock), matching: find.text('Orders')));
+    await tester.pumpAndSettle();
+    expect(find.text('Order history'), findsOneWidget);
+    expect(find.text('Receipts'), findsOneWidget);
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in with OTP'), findsOneWidget);
+    final google = find.widgetWithText(OutlinedButton, 'Sign in with Google');
+    await tester.scrollUntilVisible(google, 150, scrollable: find.byType(Scrollable).first);
+    expect(tester.widget<OutlinedButton>(google).onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
 }

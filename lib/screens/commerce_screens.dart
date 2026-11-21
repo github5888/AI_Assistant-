@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'checkout_flow.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -35,7 +35,14 @@ class _CartScreenState extends State<CartScreen> {
           ...state.cart.map((line) => _CartLineCard(line: line)),
           StoreNotice(message: 'Item subtotal: ${money(state.cartSubtotal)}'
             '${threshold != null && threshold > 0 ? '\nWebsite free-delivery threshold: ${money(threshold)}' : ''}'),
-          const _WebsiteCheckoutNotice(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: PrimaryButton(
+              label: 'Continue to checkout',
+              icon: Icons.arrow_forward,
+              onTap: () => pushScreen(context, const CheckoutScreen()),
+            ),
+          ),
         ],
       );
     }
@@ -86,42 +93,6 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ],
           );
-  }
-}
-
-class _WebsiteCheckoutNotice extends StatelessWidget {
-  const _WebsiteCheckoutNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    final site = AppScope.of(context).api!.base;
-    return SectionCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'In-app checkout and promo codes are not connected yet. To order, use the store website. You’ll need to add your items again there.',
-            style: TextStyle(fontSize: 13, height: 1.45),
-          ),
-          const SizedBox(height: 12),
-          PrimaryButton(
-            label: 'Open store website',
-            icon: Icons.open_in_new,
-            onTap: () async {
-              try {
-                if (await launchUrl(site, mode: LaunchMode.externalApplication)) return;
-              } catch (_) {
-                // Fall back to a human-readable address if no browser opens.
-              }
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Open ${site.origin} in your browser.')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -468,12 +439,7 @@ class CheckoutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
-    if (state.isLive) {
-      return const AppPage(child: Column(children: [
-        AppTopBar(title: 'Checkout', back: true),
-        Expanded(child: SingleChildScrollView(child: _WebsiteCheckoutNotice())),
-      ]));
-    }
+    if (state.isLive) return const InAppCheckoutScreen();
 
     return AppPage(
       child: Column(

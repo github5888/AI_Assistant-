@@ -58,8 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     pushScreen(context, ProductScreen(product: product));
                   }
                 },
-                onLab: () => state.goTab(2),
-                onViewer: () => pushScreen(context, const ViewerScreen()),
+                onLab: state.isLive ? null : () => state.goTab(2),
+                onViewer: state.isLive ? null : () => pushScreen(context, const ViewerScreen()),
                 onReset: () {
                   _heroController.jumpToPage(0);
                   state.setHeroIndex(0);
@@ -124,10 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitle: 'Live EV status',
               onTap: () => pushScreen(context, const TrackingScreen()),
             ),
+            if (state.isLive)
+              QuickAction(
+                icon: Icons.receipt_long,
+                title: 'Your orders',
+                subtitle: 'History & receipts',
+                onTap: () => state.goTab(2),
+              )
+            else
             QuickAction(
               icon: Icons.verified,
-              title: state.isLive ? 'Batch information' : 'Verify pack',
-              subtitle: state.isLive ? 'From live catalog' : 'Batch #IC-0426',
+              title: 'Verify pack',
+              subtitle: 'Batch #IC-0426',
               onTap: () => state.goTab(2),
             ),
             if (!state.isLive) QuickAction(
@@ -198,8 +206,8 @@ class _HomeScreenState extends State<HomeScreen> {
         SectionHeader(
           eyebrow: 'Slow milled, honestly',
           title: 'Made the clear way',
-          action: 'Our standard',
-          onAction: () => state.goTab(2),
+          action: state.isLive ? 'Browse flours' : 'Our standard',
+          onAction: () => state.goTab(state.isLive ? 1 : 2),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -211,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   eyebrow: '01 · Cold milled',
                   title: 'Below 28°C',
                   subtitle: 'Live enzymes intact',
-                  onTap: () => state.goTab(2),
+                  onTap: () => state.goTab(state.isLive ? 1 : 2),
                 ),
               ),
               const SizedBox(width: 10),
@@ -229,22 +237,22 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         _CalcPromo(onTap: () => pushScreen(context, const CalculatorScreen())),
         if (!state.isLive) ...[
-        PromiseCard(onTap: () => state.goTab(2)),
-        _SaleCard(onTap: () => pushScreen(context, const OffersScreen())),
-        _PromoCard(
-          icon: Icons.science,
-          eyebrow: 'Zero-maida lab',
-          title: 'Proof, not promises.',
-          subtitle: 'NABL batch certificate · 6/6 tests passed',
-          onTap: () => state.goTab(2),
-        ),
-        SectionHeader(
-          eyebrow: 'Popular this month',
-          title: 'Top ranked',
-          action: 'Shop',
-          onAction: () => state.goTab(1),
-        ),
-        ...ranked.take(4).map((item) => _RankHomeRow(item: item)),
+          PromiseCard(onTap: () => state.goTab(2)),
+          _SaleCard(onTap: () => pushScreen(context, const OffersScreen())),
+          _PromoCard(
+            icon: Icons.science,
+            eyebrow: 'Zero-maida lab',
+            title: 'Proof, not promises.',
+            subtitle: 'NABL batch certificate · 6/6 tests passed',
+            onTap: () => state.goTab(2),
+          ),
+          SectionHeader(
+            eyebrow: 'Popular this month',
+            title: 'Top ranked',
+            action: 'Shop',
+            onAction: () => state.goTab(1),
+          ),
+          ...ranked.take(4).map((item) => _RankHomeRow(item: item)),
         ],
         const SizedBox(height: 8),
         const Center(
@@ -306,8 +314,8 @@ class _LocationChip extends StatelessWidget {
 class _HeroCard extends StatelessWidget {
   final HeroSlide slide;
   final VoidCallback onShop;
-  final VoidCallback onLab;
-  final VoidCallback onViewer;
+  final VoidCallback? onLab;
+  final VoidCallback? onViewer;
   final VoidCallback onReset;
 
   const _HeroCard({
@@ -435,61 +443,65 @@ class _HeroCard extends StatelessWidget {
                         onTap: onShop,
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: _SmallAction(
-                        label: 'Zero-maida lab',
-                        primary: false,
-                        onTap: onLab,
+                    if (onLab != null) ...[
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: _SmallAction(
+                          label: 'Zero-maida lab',
+                          primary: false,
+                          onTap: onLab!,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 9),
-                InkWell(
-                  onTap: onViewer,
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 34),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xF2FFFFFF),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: AppColors.line),
-                      boxShadow: const [
-                        BoxShadow(color: Color(0x14101A3A), blurRadius: 14, offset: Offset(0, 5)),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.refresh, size: 12, color: AppColors.ink),
-                        const SizedBox(width: 6),
-                        const Expanded(
-                          child: Text(
-                            'Drag 360° to inspect authentic packaging',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.ink,
+                if (onViewer != null) ...[
+                  const SizedBox(height: 9),
+                  InkWell(
+                    onTap: onViewer,
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: 34),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xF2FFFFFF),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: AppColors.line),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x14101A3A), blurRadius: 14, offset: Offset(0, 5)),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.refresh, size: 12, color: AppColors.ink),
+                          const SizedBox(width: 6),
+                          const Expanded(
+                            child: Text(
+                              'Drag 360° to inspect authentic packaging',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.ink,
+                              ),
                             ),
                           ),
-                        ),
-                        InkWell(
-                          onTap: onReset,
-                          child: const Text(
-                            'Reset',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.orange,
+                          InkWell(
+                            onTap: onReset,
+                            child: const Text(
+                              'Reset',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.orange,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
