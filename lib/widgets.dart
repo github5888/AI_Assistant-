@@ -446,7 +446,14 @@ class Eyebrow extends StatelessWidget {
               gradient: LinearGradient(colors: [AppColors.orange, AppColors.gold]),
             ),
           ),
-        Text(text.toUpperCase(), style: eyebrowStyle(color: color)),
+        Flexible(
+          child: Text(
+            text.toUpperCase(),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: eyebrowStyle(color: color),
+          ),
+        ),
       ],
     );
   }

@@ -89,6 +89,7 @@ void main() {
     _phone(tester, const Size(320, 640), scale: 1.6);
     await tester.pumpWidget(ItsClearApp(api: _api()));
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'increased text on restored Home');
     await tester.tap(_dock('Shop'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'increased text on live shop');
