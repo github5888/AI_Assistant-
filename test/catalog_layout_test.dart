@@ -97,10 +97,13 @@ void main() {
       matching: find.byType(Scrollable),
     ).first;
     await tester.scrollUntilVisible(category, 100, scrollable: scroll);
-    await tester.tap(category);
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('a')), findsOneWidget);
-    expect(find.byKey(const ValueKey('b')), findsNothing);
+    await tester.tap(category.hitTestable());
+    await tester.pumpAndSettle();
+    final shop = find.byKey(const PageStorageKey('live-shop'));
+    expect(shop.hitTestable(), findsOneWidget);
+    expect(find.descendant(of: shop, matching: find.byKey(const ValueKey('a'))), findsOneWidget);
+    expect(find.descendant(of: shop, matching: find.byKey(const ValueKey('b'))), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
