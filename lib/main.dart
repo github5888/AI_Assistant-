@@ -9,6 +9,7 @@ import 'widgets.dart';
 import 'screens/commerce_screens.dart';
 import 'screens/checkout_flow.dart';
 import 'screens/home_screen.dart';
+import 'screens/live_home_screen.dart';
 import 'screens/lab_screen.dart';
 import 'screens/list_screens.dart';
 import 'screens/profile_screen.dart';
@@ -115,7 +116,7 @@ class PhoneShell extends StatelessWidget {
                       sizing: StackFit.expand,
                       index: state.tab,
                       children: [
-                        const HomeScreen(),
+                        state.isLive ? const LiveHomeScreen() : const HomeScreen(),
                         const ShopScreen(),
                         state.isLive ? const InAppOrdersTab() : const LabScreen(),
                         const CartScreen(),
@@ -171,11 +172,13 @@ class PhoneShell extends StatelessWidget {
     }
     if (state.tab == 1) {
       return [
-        RoundIconButton(
-          icon: Icons.search,
-          onTap: () => pushScreen(context, const SearchScreen()),
-        ),
-        const SizedBox(width: 6),
+        if (!state.isLive) ...[
+          RoundIconButton(
+            icon: Icons.search,
+            onTap: () => pushScreen(context, const SearchScreen()),
+          ),
+          const SizedBox(width: 6),
+        ],
         RoundIconButton(
           icon: Icons.favorite_border,
           onTap: () => pushScreen(context, const WishlistScreen()),

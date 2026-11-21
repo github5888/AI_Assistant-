@@ -390,6 +390,7 @@ class PackImage extends StatelessWidget {
   final double? width;
   final double? height;
   final BoxFit fit;
+  final int? cacheWidth;
   const PackImage({
     super.key,
     required this.asset,
@@ -397,13 +398,14 @@ class PackImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.contain,
+    this.cacheWidth,
   });
 
   @override
   Widget build(BuildContext context) {
     if (asset.startsWith('https://')) {
       return Image.network(asset,
-        width: width, height: height, fit: fit,
+        width: width, height: height, fit: fit, cacheWidth: cacheWidth,
         errorBuilder: (_, __, ___) => Image.asset(fallback, width: width, height: height, fit: fit),
       );
     }
@@ -412,7 +414,8 @@ class PackImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
-      filterQuality: FilterQuality.high,
+      filterQuality: FilterQuality.medium,
+      cacheWidth: cacheWidth,
     );
   }
 }
@@ -821,62 +824,108 @@ class _LiveProductCard extends StatelessWidget {
     final state = AppScope.of(context);
     final size = product.sizes.first;
     final wished = state.wishlist.contains(product.id);
-    return Container(
-      width: width,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(color: AppColors.paper, borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.line)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Expanded(child: Stack(fit: StackFit.expand, children: [
-          InkWell(onTap: openDetails, child: ColoredBox(color: AppColors.sand,
-            child: Padding(padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
-              child: PackImage(asset: product.image, fallback: product.fallbackImage ?? AppImages.khapli),
+    final scaler = MediaQuery.textScalerOf(context);
+
+    void add() {
+      if (!size.inStock) { openDetails(); return; }
+      final added = state.addToCart(product, size, 1);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text(added ? 'Added to your basket' : 'This quantity is not available.'),
+          duration: const Duration(milliseconds: 1100),
+        ));
+    }
+
+    return SizedBox(width: width, child: LayoutBuilder(builder: (context, bounds) {
+      final rowLayout = bounds.maxWidth >= 274;
+      final imageWidth = rowLayout ? (bounds.maxWidth * .34).clamp(88, 144).toDouble() : bounds.maxWidth;
+      final cacheWidth = (imageWidth * MediaQuery.devicePixelRatioOf(context)).clamp(150, 480).round();
+      final image = Stack(fit: StackFit.expand, children: [
+        Material(
+          color: const Color(0xFFFAF0E5),
+          child: InkWell(
+            onTap: openDetails,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(13, 11, 13, 10),
+              child: PackImage(asset: product.image,
+                fallback: product.fallbackImage ?? AppImages.khapli, cacheWidth: cacheWidth),
             ),
-          )),
-          Positioned(top: 6, right: 6, child: IconButton.filledTonal(
-            tooltip: wished ? 'Remove from saved items' : 'Save item',
-            icon: Icon(wished ? Icons.favorite : Icons.favorite_border, size: 18),
-            onPressed: () => state.toggleWish(product.id),
-          )),
-        ])),
-        Padding(padding: const EdgeInsets.fromLTRB(12, 9, 12, 10), child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(size.label, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-              if (product.rating > 0) Text('★ ${product.rating.toStringAsFixed(1)}',
-                style: const TextStyle(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w700)),
-            ]),
-            const SizedBox(height: 4),
-            InkWell(onTap: openDetails, child: Text(product.name,
-              maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, height: 1.16, fontWeight: FontWeight.w800))),
-            const SizedBox(height: 6),
-            Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              Text(money(size.price), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-              if (size.mrp > size.price) Text(money(size.mrp), style: const TextStyle(
-                fontSize: 11, color: AppColors.muted, decoration: TextDecoration.lineThrough,
-              )),
-            ]),
-            const SizedBox(height: 6),
-            SizedBox(width: double.infinity, child: OutlinedButton(
-              onPressed: () {
-                if (!size.inStock) { openDetails(); return; }
-                final added = state.addToCart(product, size, 1);
-                ScaffoldMessenger.of(context)
-                  ..hideCurrentSnackBar()
-                  ..showSnackBar(SnackBar(
-                    content: Text(added ? 'Added to your basket' : 'This quantity is not available.'),
-                    duration: const Duration(milliseconds: 1100),
-                  ));
-              },
-              child: Text(size.inStock ? 'Add to basket' : 'View sizes', textAlign: TextAlign.center),
-            )),
-          ],
+          ),
+        ),
+        Positioned(top: 2, right: 2, child: IconButton(
+          tooltip: wished ? 'Remove from saved items' : 'Save item',
+          style: IconButton.styleFrom(backgroundColor: AppColors.paper, foregroundColor: AppColors.ink),
+          icon: Icon(wished ? Icons.favorite : Icons.favorite_border, size: 16),
+          onPressed: () => state.toggleWish(product.id),
         )),
-      ]),
-    );
+      ]);
+
+      final details = Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          InkWell(onTap: openDetails, child: SizedBox(
+            width: double.infinity,
+            height: scaler.scale(13) * 2.38,
+            child: Text(product.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, height: 1.17, fontWeight: FontWeight.w800, color: AppColors.ink)),
+          )),
+          const SizedBox(height: 3),
+          Row(children: [
+            Expanded(child: Text(size.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: AppColors.muted))),
+            if (product.rating > 0) ...[
+              const Icon(Icons.star_rounded, size: 13, color: Color(0xFFA56722)),
+              const SizedBox(width: 2),
+              Text(product.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 11,
+                fontWeight: FontWeight.w700, color: AppColors.ink)),
+            ],
+          ]),
+          const SizedBox(height: 3),
+          Row(children: [
+            Expanded(child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(money(size.price), style: const TextStyle(fontSize: 17, height: 1.05,
+                  fontWeight: FontWeight.w900, color: AppColors.ink)),
+                if (size.mrp > size.price) Text(money(size.mrp), style: const TextStyle(fontSize: 10,
+                  color: AppColors.muted, decoration: TextDecoration.lineThrough)),
+              ]),
+            )),
+            const SizedBox(width: 5),
+            Tooltip(
+              message: size.inStock ? 'Add ${product.name}, ${size.label}' : 'View available pack sizes',
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFEBDE),
+                  foregroundColor: const Color(0xFF923B18),
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                  minimumSize: const Size(44, 40),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                ),
+                onPressed: add,
+                child: Text(size.inStock ? 'Add' : 'Sizes'),
+              ),
+            ),
+          ]),
+        ]),
+      );
+
+      return Card(
+        margin: EdgeInsets.zero,
+        color: AppColors.paper,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.line)),
+        clipBehavior: Clip.antiAlias,
+        child: rowLayout
+            ? Row(children: [SizedBox(width: imageWidth, height: double.infinity, child: image),
+                Expanded(child: details)])
+            : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: image), details]),
+      );
+    }));
   }
 }
 

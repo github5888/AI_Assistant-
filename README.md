@@ -14,6 +14,10 @@ The Flutter Android app reads the live itsclear storefront API. The earlier Reac
 
 The default API origin is `https://itsclear.in`. Use `--dart-define=ITSCLEAR_API_BASE_URL=https://your-staging-host.example` with `flutter run` or `flutter build apk --release` to test another HTTPS origin. Android release builds require the `INTERNET` permission in `android/app/src/main/AndroidManifest.xml`; the APK workflow preserves that manifest when generating its matching Gradle runner.
 
+## Mobile storefront layout
+
+Home puts search, a compact product banner, category chips and the featured grid before secondary links. Home and Shop share a lazy, responsive catalog grid. On standard phone widths, cards fit two across with a compact Add button next to the price; larger system fonts use a wider horizontal card. Product thumbnails are decoded near their display size to reduce scrolling memory use. `test/catalog_layout_test.dart` checks layout and basket interaction on narrow phone viewports.
+
 ## Customer sign-in
 
 Profile supports Email OTP (send and verify), password sign-in, Email OTP account registration and resend, and native Google sign-in. Google uses `POST /api/auth/google`; an existing local account is linked only after an Email OTP via `POST /api/auth/google/link`. The app uses the customer portal only. It stores the returned itsclear session in Android secure storage, validates a restored session with `GET /api/auth/me`, and removes it on sign-out. Test-mode email codes returned by the backend are never displayed by the app.

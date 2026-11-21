@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'product_screen.dart';
 import 'search_screen.dart';
+import 'storefront_layout.dart';
 
 class ShopScreen extends StatelessWidget {
   const ShopScreen({super.key});
@@ -13,12 +14,12 @@ class ShopScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    if (state.isLive) return const _LiveShop();
     final visible = state.filteredProducts;
     final textExtra = MediaQuery.textScalerOf(context).scale(12) - 12;
 
-    final content = ListView(
+    return ListView(
       primary: false,
-      physics: state.isLive ? const AlwaysScrollableScrollPhysics() : null,
       padding: const EdgeInsets.only(bottom: 24),
       children: [
         SectionHeader(
@@ -69,8 +70,6 @@ class ShopScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (state.isLive && (state.catalogError || visible.isEmpty))
-          const CatalogStatus(emptyMessage: 'No products in this category.'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.builder(
@@ -78,11 +77,10 @@ class ShopScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: visible.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: state.isLive && (MediaQuery.sizeOf(context).width < 350 || textExtra > 3.6)
-                  ? 1 : 2,
+              crossAxisCount: 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              mainAxisExtent: (state.isLive ? 330 : 258) + textExtra.clamp(0, 24).toDouble() * 9,
+              mainAxisExtent: 258 + textExtra.clamp(0, 24).toDouble() * 9,
             ),
             itemBuilder: (context, index) {
               final product = visible[index];
@@ -114,9 +112,45 @@ class ShopScreen extends StatelessWidget {
         ],
       ],
     );
-    return state.isLive
-        ? RefreshIndicator(onRefresh: state.refreshStore, child: content)
-        : content;
+  }
+}
+
+class _LiveShop extends StatelessWidget {
+  const _LiveShop();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final visible = state.filteredProducts;
+    return RefreshIndicator(
+      onRefresh: state.refreshStore,
+      child: CustomScrollView(
+        key: const PageStorageKey('live-shop'),
+        primary: false,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          const SliverToBoxAdapter(child: CatalogSearchBar()),
+          const SliverToBoxAdapter(child: CatalogCategoryStrip()),
+          SliverToBoxAdapter(child: CatalogHeading(
+            title: state.categoryIndex == 0 ? 'All products' : categoryFilters[state.categoryIndex],
+            trailing: PopupMenuButton<int>(
+              tooltip: 'Sort products',
+              initialValue: state.sortIndex,
+              onSelected: state.setSort,
+              icon: const Icon(Icons.sort_rounded, size: 22, color: AppColors.ink),
+              itemBuilder: (context) => [
+                for (var i = 0; i < sortLabels.length; i++)
+                  PopupMenuItem(value: i, child: Text(sortLabels[i])),
+              ],
+            ),
+          )),
+          if (state.catalogError || visible.isEmpty)
+            const SliverToBoxAdapter(child: CatalogStatus(emptyMessage: 'No products in this category.')),
+          CatalogSliverGrid(products: visible),
+          const SliverToBoxAdapter(child: SizedBox(height: 22)),
+        ],
+      ),
+    );
   }
 }
 
