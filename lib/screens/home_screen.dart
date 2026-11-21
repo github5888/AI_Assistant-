@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.only(bottom: 22),
       children: [
         const SizedBox(height: 10),
-        _LocationChip(pin: state.address.pin),
+        if (!state.isLive) _LocationChip(pin: state.address.pin),
         SizedBox(
           height: (compact ? 304 : 286) + textExtra * 14,
           child: PageView.builder(
@@ -49,10 +49,15 @@ class _HomeScreenState extends State<HomeScreen> {
               final slide = heroSlides[index];
               return _HeroCard(
                 slide: slide,
-                onShop: () => pushScreen(
-                  context,
-                  ProductScreen(product: products[slide.productIndex]),
-                ),
+                onShop: () {
+                  final product = state.featuredPack(slide.productIndex);
+                  if (product == null) {
+                    state.setCategory(0);
+                    state.goTab(1);
+                  } else {
+                    pushScreen(context, ProductScreen(product: product));
+                  }
+                },
                 onLab: () => state.goTab(2),
                 onViewer: () => pushScreen(context, const ViewerScreen()),
                 onReset: () {
@@ -108,12 +113,12 @@ class _HomeScreenState extends State<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          crossAxisCount: compact ? 2 : 4,
+          crossAxisCount: compact || state.isLive ? 2 : 4,
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
           mainAxisExtent: 108 + textExtra * 4,
           children: [
-            QuickAction(
+            if (!state.isLive) QuickAction(
               icon: Icons.near_me,
               title: 'Track order',
               subtitle: 'Live EV status',
@@ -121,11 +126,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             QuickAction(
               icon: Icons.verified,
-              title: 'Verify pack',
-              subtitle: 'Batch #IC-0426',
+              title: state.isLive ? 'Batch information' : 'Verify pack',
+              subtitle: state.isLive ? 'From live catalog' : 'Batch #IC-0426',
               onTap: () => state.goTab(2),
             ),
-            QuickAction(
+            if (!state.isLive) QuickAction(
               icon: Icons.confirmation_number,
               title: 'Offers',
               subtitle: 'CLEAR50 is live',
@@ -167,19 +172,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SectionHeader(
           eyebrow: 'The favourites',
-          title: 'Best sellers',
+          title: state.isLive ? 'Featured flours' : 'Best sellers',
           action: 'See all',
           onAction: () => state.goTab(1),
         ),
-        SizedBox(
+        if (state.isLive && (state.catalogError || state.featuredProducts.isEmpty))
+          const CatalogStatus(emptyMessage: 'No products are listed right now.'),
+        if (state.featuredProducts.isNotEmpty) SizedBox(
           height: 258 + textExtra * 5,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
-            itemCount: products.take(4).length,
+            itemCount: state.featuredProducts.length,
             separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final product = products[index];
+              final product = state.featuredProducts[index];
               return ProductCard(
                 product: product,
                 width: 166,
@@ -220,6 +227,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        _CalcPromo(onTap: () => pushScreen(context, const CalculatorScreen())),
+        if (!state.isLive) ...[
         PromiseCard(onTap: () => state.goTab(2)),
         _SaleCard(onTap: () => pushScreen(context, const OffersScreen())),
         _PromoCard(
@@ -229,7 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: 'NABL batch certificate · 6/6 tests passed',
           onTap: () => state.goTab(2),
         ),
-        _CalcPromo(onTap: () => pushScreen(context, const CalculatorScreen())),
         SectionHeader(
           eyebrow: 'Popular this month',
           title: 'Top ranked',
@@ -237,6 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onAction: () => state.goTab(1),
         ),
         ...ranked.take(4).map((item) => _RankHomeRow(item: item)),
+        ],
         const SizedBox(height: 8),
         const Center(
           child: Row(

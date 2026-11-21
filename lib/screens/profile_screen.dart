@@ -14,6 +14,36 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
 
+    if (state.isLive) {
+      final config = state.storeConfig;
+      return ListView(
+        primary: false,
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          const SectionHeader(eyebrow: 'Store connection', title: 'Guest profile'),
+          StoreNotice(
+            message: switch (state.storeOnline) {
+              true => 'Live store is connected.',
+              false => 'The store is temporarily unavailable.',
+              null => 'Store status has not been confirmed.',
+            },
+            onRetry: state.isLoadingCatalog ? null : state.refreshStore,
+          ),
+          if (config != null) StoreNotice(message:
+            'Website payment options: ${config.codEnabled ? "cash on delivery available" : "cash on delivery unavailable"}; '
+            '${config.onlinePaymentsEnabled ? "online payment available" : "online payment unavailable"}.'
+          ),
+          StoreNotice(message: 'Sign-in and order history are not available in this app yet. Saved items stay in this session.'),
+          SectionCard(child: InfoRow(
+            icon: Icons.favorite_border,
+            title: 'Saved items',
+            subtitle: '${state.wishlist.length} flours',
+            onTap: () => pushScreen(context, const WishlistScreen()),
+          )),
+        ],
+      );
+    }
+
     return ListView(
       primary: false,
       padding: const EdgeInsets.only(bottom: 24),

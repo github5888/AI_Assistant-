@@ -16,8 +16,9 @@ class ShopScreen extends StatelessWidget {
     final visible = state.filteredProducts;
     final textExtra = MediaQuery.textScalerOf(context).scale(12) - 12;
 
-    return ListView(
+    final content = ListView(
       primary: false,
+      physics: state.isLive ? const AlwaysScrollableScrollPhysics() : null,
       padding: const EdgeInsets.only(bottom: 24),
       children: [
         SectionHeader(
@@ -68,6 +69,8 @@ class ShopScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (state.isLive && (state.catalogError || visible.isEmpty))
+          const CatalogStatus(emptyMessage: 'No products in this category.'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.builder(
@@ -92,6 +95,7 @@ class ShopScreen extends StatelessWidget {
             },
           ),
         ),
+        if (!state.isLive) ...[
         SectionHeader(
           eyebrow: 'Better together',
           title: 'Monthly bundles',
@@ -106,8 +110,12 @@ class ShopScreen extends StatelessWidget {
           onAction: () => state.setCategory(0),
         ),
         ...ranked.map((item) => _RankedRow(item: item)),
+        ],
       ],
     );
+    return state.isLive
+        ? RefreshIndicator(onRefresh: state.refreshStore, child: content)
+        : content;
   }
 }
 

@@ -50,7 +50,7 @@ class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final items = products.where((p) => state.wishlist.contains(p.id)).toList();
+    final items = state.catalog.where((p) => state.wishlist.contains(p.id)).toList();
 
     return ListScaffold(
       title: 'Saved items',
@@ -89,7 +89,7 @@ class WishlistScreen extends StatelessWidget {
                     decoration: premiumCard(radius: 16),
                     child: Row(
                       children: [
-                        PackImage(asset: product.image, width: 56, height: 66),
+                        PackImage(asset: product.image, fallback: product.fallbackImage ?? AppImages.khapli, width: 56, height: 66),
                         const SizedBox(width: 11),
                         Expanded(
                           child: Column(

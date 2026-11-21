@@ -382,12 +382,14 @@ class Stars extends StatelessWidget {
 
 class PackImage extends StatelessWidget {
   final String asset;
+  final String fallback;
   final double? width;
   final double? height;
   final BoxFit fit;
   const PackImage({
     super.key,
     required this.asset,
+    this.fallback = AppImages.khapli,
     this.width,
     this.height,
     this.fit = BoxFit.contain,
@@ -395,6 +397,12 @@ class PackImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (asset.startsWith('https://')) {
+      return Image.network(asset,
+        width: width, height: height, fit: fit,
+        errorBuilder: (_, __, ___) => Image.asset(fallback, width: width, height: height, fit: fit),
+      );
+    }
     return Image.asset(
       asset,
       width: width,
@@ -644,7 +652,7 @@ class ProductCard extends StatelessWidget {
                       colors: [Color(0xFFFFFAF3), Color(0xFFFFF1E5)],
                     ),
                   ),
-                  child: PackImage(asset: product.image),
+                  child: PackImage(asset: product.image, fallback: product.fallbackImage ?? AppImages.khapli),
                 ),
                 Positioned(
                   left: 8,
@@ -761,10 +769,11 @@ class ProductCard extends StatelessWidget {
                     ),
                     InkWell(
                       onTap: () {
-                        state.addToCart(product, product.sizes.first, 1);
+                        final available = product.sizes.where((size) => size.inStock);
+                        final added = available.isNotEmpty && state.addToCart(product, available.first, 1);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${product.name} added to basket'),
+                            content: Text(added ? '${product.name} added to basket' : 'This quantity is not available.'),
                             duration: const Duration(milliseconds: 900),
                           ),
                         );
@@ -1231,5 +1240,52 @@ class InfoRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class StoreNotice extends StatelessWidget {
+  const StoreNotice({super.key, required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(message, style: const TextStyle(fontSize: 13, height: 1.4)),
+          if (onRetry != null)
+            TextButton(onPressed: onRetry, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+class CatalogStatus extends StatelessWidget {
+  const CatalogStatus({super.key, this.emptyMessage = 'No products found.'});
+
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    if (state.isLoadingCatalog && state.catalog.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (state.catalogError) {
+      return StoreNotice(
+        message: state.catalog.isEmpty
+            ? 'Could not load the live catalog.'
+            : 'Could not refresh. Showing the last loaded catalog.',
+        onRetry: state.refreshStore,
+      );
+    }
+    return StoreNotice(message: emptyMessage);
   }
 }

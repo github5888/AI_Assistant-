@@ -1,27 +1,24 @@
 # itsclear™ — Flutter Android app
 
-**This is the actual Flutter / Dart Android app**, not the earlier React/Vite website. The archived web prototype lives in `legacy_web/` and is only a visual reference. It is **not** the deliverable and there is no PWA, browser preview, backend, API, real payment, chat, or AI assistant in this app.
+The Flutter Android app reads the live itsclear storefront API. The earlier React/Vite prototype is archived under `legacy_web/` for visual reference only.
 
-The UI is a premium, phone-first `itsclear.in`-style storefront built around the exact black-and-cream Khapli pouch assets in `assets/images/`. The layout follows the phone’s screen size and system insets, including cutouts, gesture navigation and the on-screen keyboard. All shopping flows are local UI state only.
+## Live API integration
 
-## What is inside
+| Read endpoint | Use in the app |
+| --- | --- |
+| `GET /api/products` | Home, Shop, search and saved items: products, prices, pack variants, stock and product photos |
+| `GET /api/products/:id` | Refresh product details, nutrition and batch reference |
+| `GET /api/config` | Website payment availability and free-delivery threshold |
+| `GET /api/health` | Store/database status in the guest profile |
+| `GET /api/reviews?productId=:id` | Written reviews on product details; the live endpoint currently returns an empty array. The reader only shows records with a matching product ID, valid rating and comment. |
 
-- `lib/main.dart` — app entry, phone shell, frosted app bar, floating dark glass bottom dock.
-- `lib/theme.dart` — cream / navy / orange / gold premium palette and reusable typography.
-- `lib/data.dart` — products, exact pack images, lab tests, hero slides, bundles, ranking, timeline.
-- `lib/app_state.dart` — local cart, wishlist, coupon, calculator, viewer, checkout and order state.
-- `lib/widgets.dart` — reusable premium cards, pack image, pills, buttons, quick actions, trust chips.
-- `lib/screens/` — Home, Shop, Product, Search, 360° Viewer, Calculator, Lab, Basket, Checkout, Order Success, Tracking, Wishlist, Offers, Notifications, Orders and Profile.
-- `assets/images/` — the six exact isolated pouch PNGs plus the two lifestyle JPGs.
-- `android/` — native Android host using the Flutter Gradle Plugin.
-- `.github/workflows/apk.yml` — GitHub Actions workflow that generates a fresh Android runner, analyzes the Dart source and uploads a release APK.
-- `legacy_web/` — archived React/Vite implementation, kept only so the original design reference is not lost.
+The default API origin is `https://itsclear.in`. Use `--dart-define=ITSCLEAR_API_BASE_URL=https://your-staging-host.example` with `flutter run` or `flutter build apk --release` to test another HTTPS origin. Android release builds require the `INTERNET` permission in `android/app/src/main/AndroidManifest.xml`; the APK workflow preserves that manifest when generating its matching Gradle runner.
 
-### Implemented UI flows
+The basket and saved items are session-local. Signed-in accounts, coupons, order creation/history/tracking, review submissions, uploads and payment processing are **not** wired: the Express entry point only shows mount paths, not their handlers or schemas. Live mode never creates a simulated order or applies a simulated discount. The basket offers the official website in a browser, with no automatic cart transfer. The payment webhook is backend-only and should never be called by the app.
 
-Home hero carousel, quick actions, categories, best sellers, editorial stories, promise card and ranked list; Shop filters/sort/search; product gallery, sizes, quantity, overview/nutrition/lab tabs and 360° pack inspector; wishlist; basket with quantity controls, `CLEAR50` coupon and bill; checkout with editable address, delivery slots and payment method selection; order confirmation, order list and tracking timeline; NABL lab certificate and benchmarks; grain/roti calculator; offers, notifications and profile.
+To continue the write integrations, provide an OpenAPI spec or the route handlers and request/response examples for `auth`, `orders`, `coupons`, `reviews`, `upload` and `payments`, including which routes are customer-facing and how authentication works. Use examples with all tokens, keys and customer data removed. Payment verification and final totals must remain on the server. Test write flows on staging or a payment sandbox first.
 
-Everything is UI-only: no network calls, no database, no real order, no payment gateway and no assistant/chat.
+`lib/store_api.dart` implements the read client, `lib/app_state.dart` manages the live catalog and the local basket, and `test/store_api_test.dart` tests parsing, failures, retry and displaying API data on a narrow screen. A local fixture mode is retained for the original Flutter layout regression tests and is not used by the Android entry point.
 
 ## Run locally on Windows
 
@@ -41,6 +38,7 @@ flutter create --platforms=android --project-name itsclear_app --org com.itsclea
 
 flutter pub get
 flutter analyze
+flutter test
 flutter run
 flutter build apk --release
 ```
@@ -51,7 +49,7 @@ The APK appears at:
 build/app/outputs/flutter-apk/app-release.apk
 ```
 
-If Android Gradle complains about a version mismatch, delete `android/` and rerun the `flutter create --no-overwrite .` command above. Generated `gradlew`, `gradlew.bat`, `gradle-wrapper.jar` and `local.properties` are intentionally ignored by Git.
+If Android Gradle reports a template mismatch, follow the APK workflow’s generation steps and keep the checked-in Android manifest. Generated `gradlew`, `gradlew.bat`, `gradle-wrapper.jar` and `local.properties` are intentionally ignored by Git.
 
 ## Build the APK on GitHub
 
@@ -61,7 +59,7 @@ This sandbox has **no Flutter SDK, Dart SDK or Java**, so a local APK was not bu
 2. Open the repository **Actions** tab and wait for **Build Android APK**.
 3. Download the `itsclear-release-apk` artifact from the completed run.
 
-The workflow uses Flutter `stable`, regenerates the Android runner from that exact SDK, runs `flutter pub get`, `flutter analyze`, `flutter test` (including phone layouts), and `flutter build apk --release`, then uploads `app-release.apk`. It does not need secrets or a release keystore because this is a UI demo with debug signing.
+The workflow uses Flutter `stable`, regenerates the Android runner from that exact SDK, runs `flutter pub get`, `flutter analyze`, `flutter test` (including phone layouts), and `flutter build apk --release`, then uploads `app-release.apk`. It does not need secrets or a release keystore because the APK uses debug signing for testing.
 
 ## GitHub branch
 
@@ -75,11 +73,3 @@ https://github.com/github5888/AI_Assistant-/tree/arena/188580a1-ai-assistant
 
 `main` is intentionally older. Switch the branch dropdown to `arena/188580a1-ai-assistant` to see the Flutter app. No PR/merge has been requested.
 
-## Scope reminder
-
-- Flutter / Dart Android app ✅
-- Exact black-and-cream `itsclear™` packaging assets ✅
-- Premium phone UI and full ecommerce interaction flow ✅
-- UI-only local state ✅
-- Website / PWA as deliverable ❌
-- Backend, API, real payment, chat or AI assistant ❌

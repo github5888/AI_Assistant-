@@ -79,6 +79,8 @@ class SearchScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
+                if (state.isLive && (state.catalogError || results.isEmpty))
+                  const CatalogStatus(emptyMessage: 'No matching products.'),
                 ...results.map((product) => Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                       child: InkWell(
@@ -88,7 +90,7 @@ class SearchScreen extends StatelessWidget {
                           decoration: premiumCard(radius: 16),
                           child: Row(
                             children: [
-                              PackImage(asset: product.image, width: 54, height: 64),
+                              PackImage(asset: product.image, fallback: product.fallbackImage ?? AppImages.khapli, width: 54, height: 64),
                               const SizedBox(width: 11),
                               Expanded(
                                 child: Column(
@@ -142,6 +144,7 @@ class SearchScreen extends StatelessWidget {
                         ),
                       ),
                     )),
+                if (!state.isLive) ...[
                 const SizedBox(height: 12),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -191,6 +194,7 @@ class SearchScreen extends StatelessWidget {
                         ),
                       ),
                     )),
+                ],
               ],
             ),
           ),

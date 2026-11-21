@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../data.dart';
+import '../store_api.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'viewer_screen.dart';
@@ -20,9 +21,39 @@ class _ProductScreenState extends State<ProductScreen> {
   int _tabIndex = 0;
   int _galleryIndex = 0;
 
-  List<String> get _gallery {
+  Product? _updatedProduct;
+  Future<List<StoreReview>>? _reviews;
+  bool _requested = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final api = AppScope.of(context).api;
+    if (api == null || _requested) return;
+    _requested = true;
+    _refreshProduct(api);
+  }
+
+  Future<void> _refreshProduct(StoreApi api) async {
+    try {
+      final product = await api.product(widget.product.id);
+      if (!mounted) return;
+      setState(() {
+        final previous = (_updatedProduct ?? widget.product).sizes[_sizeIndex].id;
+        final index = product.sizes.indexWhere((size) => size.id == previous);
+        _sizeIndex = index < 0 ? 0 : index;
+        _galleryIndex = 0;
+        _updatedProduct = product;
+      });
+    } catch (_) {
+      // The catalog contains the full product record. Keep it when refresh fails.
+    }
+  }
+
+  List<String> _gallery(Product product, bool live) {
+    if (live) return product.gallery.isEmpty ? [product.image] : product.gallery;
     final list = <String>[
-      widget.product.image,
+      product.image,
       AppImages.khapli,
       AppImages.protein,
       AppImages.lineup,
@@ -34,10 +65,10 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final product = widget.product;
+    final product = _updatedProduct ?? widget.product;
     final size = product.sizes[_sizeIndex];
     final wished = state.wishlist.contains(product.id);
-    final gallery = _gallery;
+    final gallery = _gallery(product, state.isLive);
 
     return AppPage(
       child: Column(
@@ -61,6 +92,8 @@ class _ProductScreenState extends State<ProductScreen> {
                 children: [
                   _Gallery(
                     asset: gallery[_galleryIndex],
+                    fallback: product.fallbackImage ?? AppImages.khapli,
+                    live: state.isLive,
                     tag: product.tag,
                     index: _galleryIndex,
                     count: gallery.length,
@@ -102,7 +135,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                '${product.rating.toStringAsFixed(1)} · ${product.reviews} verified reviews',
+                                '${product.rating.toStringAsFixed(1)} · ${product.reviews} ${state.isLive ? 'ratings' : 'verified reviews'}',
                                 style: const TextStyle(fontSize: 9, color: AppColors.muted),
                               ),
                             ),
@@ -161,6 +194,11 @@ class _ProductScreenState extends State<ProductScreen> {
                           }),
                         ),
                         const SizedBox(height: 14),
+                        if (size.description != null)
+                          Text(size.description!, style: const TextStyle(fontSize: 12)),
+                        if (!size.inStock)
+                          const Text('Out of stock', style: TextStyle(color: AppColors.orange)),
+                        if (!state.isLive)
                         Row(
                           children: const [
                             Expanded(child: SpecTile(value: '< 28°C', label: 'Cold milled')),
@@ -186,14 +224,23 @@ class _ProductScreenState extends State<ProductScreen> {
                               onTap: () => setState(() => _tabIndex = 1),
                             ),
                             _TabChip(
-                              label: 'Lab report',
+                              label: state.isLive ? 'Reviews' : 'Lab report',
                               selected: _tabIndex == 2,
-                              onTap: () => setState(() => _tabIndex = 2),
+                              onTap: () => setState(() {
+                                _tabIndex = 2;
+                                if (state.isLive) _reviews ??= state.api!.reviews(product);
+                              }),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _DetailBody(index: _tabIndex, product: product),
+                        if (state.isLive)
+                          _LiveDetailBody(
+                            product: product, index: _tabIndex, reviews: _reviews,
+                            retry: () => setState(() => _reviews = state.api!.reviews(product)),
+                          )
+                        else
+                          _DetailBody(index: _tabIndex, product: product),
                       ],
                     ),
                   ),
@@ -203,11 +250,17 @@ class _ProductScreenState extends State<ProductScreen> {
           ),
           _BuyBar(
             qty: _qty,
+            available: size.inStock,
             total: size.price * _qty,
             onMinus: () => setState(() => _qty = _qty > 1 ? _qty - 1 : 1),
             onPlus: () => setState(() => _qty += 1),
             onAdd: () {
-              state.addToCart(product, size, _qty);
+              if (!state.addToCart(product, size, _qty)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('This quantity is not available.')),
+                );
+                return;
+              }
               state.goTab(3);
               popScreen(context);
             },
@@ -220,6 +273,8 @@ class _ProductScreenState extends State<ProductScreen> {
 
 class _Gallery extends StatelessWidget {
   final String asset;
+  final String fallback;
+  final bool live;
   final String tag;
   final int index;
   final int count;
@@ -230,6 +285,8 @@ class _Gallery extends StatelessWidget {
 
   const _Gallery({
     required this.asset,
+    required this.fallback,
+    required this.live,
     required this.tag,
     required this.index,
     required this.count,
@@ -256,7 +313,7 @@ class _Gallery extends StatelessWidget {
       child: Stack(
         children: [
           Center(
-            child: PackImage(asset: asset, height: 244),
+            child: PackImage(asset: asset, fallback: fallback, height: 244),
           ),
           Positioned(
             left: 10,
@@ -310,7 +367,7 @@ class _Gallery extends StatelessWidget {
               }),
             ),
           ),
-          Positioned(
+          if (!live) Positioned(
             left: 12,
             bottom: 12,
             child: InkWell(
@@ -335,7 +392,7 @@ class _Gallery extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
+          if (!live) Positioned(
             left: 12,
             top: 46,
             child: Container(
@@ -397,6 +454,52 @@ class _TabChip extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _LiveDetailBody extends StatelessWidget {
+  const _LiveDetailBody({required this.product, required this.index, required this.reviews, required this.retry});
+  final Product product;
+  final int index;
+  final Future<List<StoreReview>>? reviews;
+  final VoidCallback retry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (index == 1) {
+      if (product.nutritionFacts.isEmpty) return const StoreNotice(message: 'No nutrition information listed.');
+      return SectionCard(child: Column(
+        children: [
+          for (final entry in product.nutritionFacts.entries)
+            InfoRow(icon: Icons.eco_outlined,
+              title: entry.key == 'glycemicIndex' ? 'Glycemic index' : entry.key,
+              trailing: entry.value,
+            ),
+        ],
+      ));
+    }
+    if (index == 2) {
+      return FutureBuilder<List<StoreReview>>(
+        future: reviews,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const StoreNotice(message: 'Loading customer reviews…');
+          }
+          if (snapshot.hasError) return StoreNotice(message: 'Could not load reviews.', onRetry: retry);
+          final items = snapshot.data ?? const [];
+          if (items.isEmpty) return const StoreNotice(message: 'No written reviews are available.');
+          return SectionCard(child: Column(children: [
+            for (final review in items.take(30))
+              InfoRow(icon: Icons.star_outline, title: review.body, trailing: '${review.rating}/5'),
+          ]));
+        },
+      );
+    }
+    return StoreNotice(message: [
+      if (product.description.isNotEmpty) product.description,
+      if (product.batch.isNotEmpty) 'Batch reference: ${product.batch}',
+      if (product.description.isEmpty && product.batch.isEmpty) 'No product description listed.',
+    ].join('\n\n'));
   }
 }
 
@@ -500,6 +603,7 @@ class _DetailBody extends StatelessWidget {
 
 class _BuyBar extends StatelessWidget {
   final int qty;
+  final bool available;
   final int total;
   final VoidCallback onMinus;
   final VoidCallback onPlus;
@@ -507,6 +611,7 @@ class _BuyBar extends StatelessWidget {
 
   const _BuyBar({
     required this.qty,
+    required this.available,
     required this.total,
     required this.onMinus,
     required this.onPlus,
@@ -543,7 +648,7 @@ class _BuyBar extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: PrimaryButton(
+            child: !available ? const Text('Out of stock', textAlign: TextAlign.center) : PrimaryButton(
               label: 'Add · ${money(total)}',
               icon: Icons.arrow_forward,
               gradient: AppGradients.orange,

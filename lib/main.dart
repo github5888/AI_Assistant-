@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_state.dart';
+import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'screens/commerce_screens.dart';
@@ -12,21 +13,34 @@ import 'screens/profile_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/shop_screen.dart';
 
-void main() => runApp(const ItsClearApp());
+void main() {
+  const base = String.fromEnvironment('ITSCLEAR_API_BASE_URL', defaultValue: StoreApi.productionUrl);
+  runApp(ItsClearApp(api: StoreApi(base)));
+}
 
 class ItsClearApp extends StatefulWidget {
-  const ItsClearApp({super.key});
+  const ItsClearApp({super.key, this.api});
+
+  final StoreApi? api;
 
   @override
   State<ItsClearApp> createState() => _ItsClearAppState();
 }
 
 class _ItsClearAppState extends State<ItsClearApp> {
-  final AppState _state = AppState();
+  late final AppState _state;
+
+  @override
+  void initState() {
+    super.initState();
+    _state = AppState(api: widget.api);
+    _state.refreshStore();
+  }
 
   @override
   void dispose() {
     _state.dispose();
+    widget.api?.close();
     super.dispose();
   }
 
@@ -59,11 +73,11 @@ class PhoneShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
     final subtitles = <String>[
-      'Lucknow, Uttar Pradesh',
+      state.isLive ? 'Shop itsclear™' : 'Lucknow, Uttar Pradesh',
       '${state.filteredProducts.length} stoneground flours',
-      'Batch #IC-0426',
+      state.isLive ? 'Product information' : 'Batch #IC-0426',
       '${state.cartCount} items',
-      'Verified member',
+      state.isLive ? 'Guest' : 'Verified member',
     ];
 
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -76,7 +90,7 @@ class PhoneShell extends StatelessWidget {
           child: Column(
             children: [
               AppTopBar(
-                title: _titles[state.tab],
+                title: state.tab == 0 && state.isLive ? 'Online store' : _titles[state.tab],
                 subtitle: subtitles[state.tab],
                 showLogo: state.tab == 0,
                 actions: _actions(context, state),
@@ -134,11 +148,13 @@ class PhoneShell extends StatelessWidget {
           icon: Icons.favorite_border,
           onTap: () => pushScreen(context, const WishlistScreen()),
         ),
-        const SizedBox(width: 6),
-        RoundIconButton(
-          icon: Icons.notifications_none,
-          onTap: () => pushScreen(context, const NotificationsScreen()),
-        ),
+        if (!state.isLive) ...[
+          const SizedBox(width: 6),
+          RoundIconButton(
+            icon: Icons.notifications_none,
+            onTap: () => pushScreen(context, const NotificationsScreen()),
+          ),
+        ],
       ];
     }
     if (state.tab == 1) {
@@ -155,6 +171,7 @@ class PhoneShell extends StatelessWidget {
       ];
     }
     if (state.tab == 2) {
+      if (state.isLive) return [];
       return [
         RoundIconButton(
           icon: Icons.download,
@@ -175,6 +192,7 @@ class PhoneShell extends StatelessWidget {
         ),
       ];
     }
+    if (state.isLive) return [];
     return [
       RoundIconButton(
         icon: Icons.notifications_none,

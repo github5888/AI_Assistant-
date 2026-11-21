@@ -44,15 +44,10 @@ jobs:
             --org com.itsclear.app \
             --description "itsclear premium ecommerce app UI" \
             /tmp/itsclear_runner
+          # Keep the application's checked-in manifest (label and Internet permission).
+          cp android/app/src/main/AndroidManifest.xml /tmp/itsclear_runner/android/app/src/main/AndroidManifest.xml
           cp -a /tmp/itsclear_runner/android/. android/
           cp -a /tmp/itsclear_runner/.metadata .metadata
-          python3 - <<'PY'
-          from pathlib import Path
-          manifest = Path('android/app/src/main/AndroidManifest.xml')
-          text = manifest.read_text(encoding='utf-8')
-          text = text.replace('android:label="itsclear_app"', 'android:label="itsclear™"')
-          manifest.write_text(text, encoding='utf-8')
-          PY
 
       - name: Install Flutter dependencies
         run: flutter pub get

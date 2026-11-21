@@ -31,7 +31,13 @@ class ProductSize {
   final String label;
   final int price;
   final int mrp;
-  const ProductSize(this.label, this.price, this.mrp);
+  final String? id;
+  final String? description;
+  final bool inStock;
+  final int? stockCount;
+  const ProductSize(this.label, this.price, this.mrp, {
+    this.id, this.description, this.inStock = true, this.stockCount,
+  });
 }
 
 class Product {
@@ -45,6 +51,13 @@ class Product {
   final String tag;
   final List<String> groups;
   final List<ProductSize> sizes;
+  final String? databaseId;
+  final String? fallbackImage;
+  final List<String> gallery;
+  final bool featured;
+  final String description;
+  final String batch;
+  final Map<String, String> nutritionFacts;
 
   const Product({
     required this.id,
@@ -57,6 +70,13 @@ class Product {
     required this.tag,
     required this.groups,
     required this.sizes,
+    this.databaseId,
+    this.fallbackImage,
+    this.gallery = const [],
+    this.featured = false,
+    this.description = '',
+    this.batch = '',
+    this.nutritionFacts = const {},
   });
 }
 

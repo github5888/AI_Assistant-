@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_state.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
@@ -9,6 +10,20 @@ class LabScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    if (state.isLive) {
+      final batches = state.catalog.where((product) => product.batch.isNotEmpty);
+      return ListView(
+        primary: false,
+        children: [
+          const SectionHeader(eyebrow: 'Live catalog', title: 'Product batch references'),
+          if (state.catalogError || batches.isEmpty)
+            const CatalogStatus(emptyMessage: 'No product batch references are available.'),
+          for (final item in batches)
+            SectionCard(child: InfoRow(icon: Icons.science, title: item.name, subtitle: item.batch)),
+        ],
+      );
+    }
     return ListView(
       primary: false,
       padding: const EdgeInsets.only(bottom: 24),

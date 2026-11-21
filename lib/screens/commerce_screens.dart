@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../data.dart';
@@ -24,6 +25,20 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+
+    if (state.isLive && state.cart.isNotEmpty) {
+      final threshold = state.storeConfig?.freeDeliveryThreshold;
+      return ListView(
+        primary: false,
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          ...state.cart.map((line) => _CartLineCard(line: line)),
+          StoreNotice(message: 'Item subtotal: ${money(state.cartSubtotal)}'
+            '${threshold != null && threshold > 0 ? '\nWebsite free-delivery threshold: ${money(threshold)}' : ''}'),
+          const _WebsiteCheckoutNotice(),
+        ],
+      );
+    }
 
     return state.cart.isEmpty
         ? _EmptyCart(onShop: () => state.goTab(1))
@@ -71,6 +86,42 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ],
           );
+  }
+}
+
+class _WebsiteCheckoutNotice extends StatelessWidget {
+  const _WebsiteCheckoutNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final site = AppScope.of(context).api!.base;
+    return SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'In-app checkout and promo codes are not connected yet. To order, use the store website. You’ll need to add your items again there.',
+            style: TextStyle(fontSize: 13, height: 1.45),
+          ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: 'Open store website',
+            icon: Icons.open_in_new,
+            onTap: () async {
+              try {
+                if (await launchUrl(site, mode: LaunchMode.externalApplication)) return;
+              } catch (_) {
+                // Fall back to a human-readable address if no browser opens.
+              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Open ${site.origin} in your browser.')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -184,7 +235,7 @@ class _CartLineCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: const Color(0xFFFFF6EC),
             ),
-            child: PackImage(asset: line.product.image),
+            child: PackImage(asset: line.product.image, fallback: line.product.fallbackImage ?? AppImages.khapli),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -416,6 +467,13 @@ class CheckoutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+
+    if (state.isLive) {
+      return const AppPage(child: Column(children: [
+        AppTopBar(title: 'Checkout', back: true),
+        Expanded(child: SingleChildScrollView(child: _WebsiteCheckoutNotice())),
+      ]));
+    }
 
     return AppPage(
       child: Column(
