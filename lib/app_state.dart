@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'auth_models.dart';
+import 'auth_platform.dart';
 import 'data.dart';
 import 'store_api.dart';
 
@@ -30,11 +32,64 @@ class Address {
 }
 
 class AppState extends ChangeNotifier {
-  AppState({this.api})
+  AppState({this.api, this.sessionVault, this.googleIdentity})
     : wishlist = api == null ? <String>{'khapli', 'protein'} : <String>{},
       orderIds = api == null ? <String>['IC40821', 'IC39744', 'IC38109'] : <String>[];
 
   final StoreApi? api;
+  final SessionVault? sessionVault;
+  final GoogleIdentity? googleIdentity;
+  CustomerSession? _session;
+  CustomerAccount? get customer => _session?.account;
+  bool restoringSession = false;
+
+  Future<void> restoreSession() async {
+    final service = api;
+    final vault = sessionVault;
+    if (service == null || vault == null || restoringSession || _session != null) return;
+    restoringSession = true;
+    notifyListeners();
+    try {
+      final token = await vault.read();
+      if (token == null || token.isEmpty || _disposed) return;
+      final account = await service.currentCustomer(token);
+      if (!_disposed) _session = CustomerSession(account, token);
+    } catch (error) {
+      // Keep the stored session on transient network errors. Never show it as
+      // authenticated before /me has confirmed it.
+      if (error is AuthException && (error.status == 401 || error.status == 404)) {
+        try { await vault.clear(); } catch (_) { /* Retry on next launch. */ }
+      }
+    } finally {
+      restoringSession = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> acceptSession(CustomerSession session) async {
+    if (_disposed || restoringSession) return;
+    try {
+      await sessionVault?.write(session.token);
+    } catch (_) {
+      throw const AuthException('Could not save your secure session. Please try again.');
+    }
+    if (_disposed) return;
+    _session = session;
+    notifyListeners();
+  }
+
+  Future<void> signOut() async {
+    try {
+      await sessionVault?.clear();
+    } catch (_) {
+      throw const AuthException('Could not clear your saved session. Please try again.');
+    }
+    if (_disposed) return;
+    _session = null;
+    notifyListeners();
+    try { await googleIdentity?.signOut(); } catch (_) { /* Store sign-out is complete. */ }
+  }
+
   bool get isLive => api != null;
   bool _disposed = false;
   bool isLoadingCatalog = false;

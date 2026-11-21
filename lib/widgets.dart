@@ -633,6 +633,9 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    if (state.isLive) {
+      return _LiveProductCard(product: product, width: width, openDetails: onTap);
+    }
     final wished = state.wishlist.contains(product.id);
     return Container(
       width: width,
@@ -803,6 +806,76 @@ class ProductCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LiveProductCard extends StatelessWidget {
+  const _LiveProductCard({required this.product, required this.width, required this.openDetails});
+  final Product product;
+  final double? width;
+  final VoidCallback openDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final size = product.sizes.first;
+    final wished = state.wishlist.contains(product.id);
+    return Container(
+      width: width,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: AppColors.paper, borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(child: Stack(fit: StackFit.expand, children: [
+          InkWell(onTap: openDetails, child: ColoredBox(color: AppColors.sand,
+            child: Padding(padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+              child: PackImage(asset: product.image, fallback: product.fallbackImage ?? AppImages.khapli),
+            ),
+          )),
+          Positioned(top: 6, right: 6, child: IconButton.filledTonal(
+            tooltip: wished ? 'Remove from saved items' : 'Save item',
+            icon: Icon(wished ? Icons.favorite : Icons.favorite_border, size: 18),
+            onPressed: () => state.toggleWish(product.id),
+          )),
+        ])),
+        Padding(padding: const EdgeInsets.fromLTRB(12, 9, 12, 10), child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text(size.label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+              if (product.rating > 0) Text('★ ${product.rating.toStringAsFixed(1)}',
+                style: const TextStyle(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w700)),
+            ]),
+            const SizedBox(height: 4),
+            InkWell(onTap: openDetails, child: Text(product.name,
+              maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, height: 1.16, fontWeight: FontWeight.w800))),
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              Text(money(size.price), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+              if (size.mrp > size.price) Text(money(size.mrp), style: const TextStyle(
+                fontSize: 11, color: AppColors.muted, decoration: TextDecoration.lineThrough,
+              )),
+            ]),
+            const SizedBox(height: 6),
+            SizedBox(width: double.infinity, child: OutlinedButton(
+              onPressed: () {
+                if (!size.inStock) { openDetails(); return; }
+                final added = state.addToCart(product, size, 1);
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(SnackBar(
+                    content: Text(added ? 'Added to your basket' : 'This quantity is not available.'),
+                    duration: const Duration(milliseconds: 1100),
+                  ));
+              },
+              child: Text(size.inStock ? 'Add to basket' : 'View sizes', textAlign: TextAlign.center),
+            )),
+          ],
+        )),
+      ]),
     );
   }
 }

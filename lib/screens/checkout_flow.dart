@@ -4,6 +4,7 @@ import '../app_state.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'sign_in_screen.dart';
 
 /// Native checkout surface. It intentionally does not submit until the backend
 /// order and payment contracts are available. The basket remains untouched.
@@ -92,12 +93,27 @@ class InAppOrdersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final signedIn = state.customer != null;
     return ListView(
       primary: false,
       padding: const EdgeInsets.only(bottom: 24),
       children: [
         const SectionHeader(eyebrow: 'Purchases', title: 'Order history'),
-        const StoreNotice(message: 'Order history and tracking are not connected yet.'),
+        SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Icon(Icons.local_shipping_outlined, size: 34, color: AppColors.orange),
+          const SizedBox(height: 10),
+          Text('Track your delivery', style: displayStyle(size: 21)),
+          const SizedBox(height: 8),
+          Text(signedIn ? 'Live order tracking is not available in the app yet.'
+              : 'Sign in to your itsclear account. Live order tracking is not available in the app yet.',
+            style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
+          if (!signedIn && !state.restoringSession) ...[
+            const SizedBox(height: 12),
+            PrimaryButton(label: 'Sign in to your account', icon: Icons.login,
+              onTap: () => pushScreen(context, const SignInScreen())),
+          ],
+        ])),
         const SectionHeader(eyebrow: 'Documents', title: 'Receipts'),
         const StoreNotice(message: 'Receipts will appear here after the store confirms an order or payment.'),
         Padding(
@@ -108,55 +124,6 @@ class InAppOrdersTab extends StatelessWidget {
             onTap: () => AppScope.of(context).goTab(3),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class SignInScreen extends StatelessWidget {
-  const SignInScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppPage(child: Column(children: [
-      AppTopBar(title: 'Sign in', subtitle: 'Your itsclear account', back: true),
-      Expanded(child: _SignInOptions()),
-    ]));
-  }
-}
-
-class _SignInOptions extends StatelessWidget {
-  const _SignInOptions();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: const [
-        SectionHeader(eyebrow: 'Mobile number', title: 'Sign in with OTP'),
-        SectionCard(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              enabled: false,
-              decoration: InputDecoration(prefixText: '+91 ', labelText: 'Mobile number'),
-              keyboardType: TextInputType.phone,
-            ),
-            SizedBox(height: 12),
-            FilledButton(onPressed: null, child: Text('Send OTP')),
-            SizedBox(height: 8),
-            Text('OTP sign-in is not connected yet.'),
-          ],
-        )),
-        SectionHeader(eyebrow: 'Or use your account', title: 'Google sign-in'),
-        SectionCard(child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            OutlinedButton(onPressed: null, child: Text('Sign in with Google')),
-            SizedBox(height: 8),
-            Text('Google sign-in needs app registration and server verification before it can be used.'),
-          ],
-        )),
       ],
     );
   }

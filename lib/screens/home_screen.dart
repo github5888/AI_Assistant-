@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (state.isLive && (state.catalogError || state.featuredProducts.isEmpty))
           const CatalogStatus(emptyMessage: 'No products are listed right now.'),
         if (state.featuredProducts.isNotEmpty) SizedBox(
-          height: 258 + textExtra * 5,
+          height: (state.isLive ? 340 : 258) + textExtra * 6,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final product = state.featuredProducts[index];
               return ProductCard(
                 product: product,
-                width: 166,
+                width: state.isLive ? (MediaQuery.sizeOf(context).width * .62).clamp(200, 255).toDouble() : 166,
                 onTap: () => pushScreen(context, ProductScreen(product: product)),
               );
             },

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_state.dart';
+import 'auth_platform.dart';
 import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -16,13 +17,19 @@ import 'screens/shop_screen.dart';
 
 void main() {
   const base = String.fromEnvironment('ITSCLEAR_API_BASE_URL', defaultValue: StoreApi.productionUrl);
-  runApp(ItsClearApp(api: StoreApi(base)));
+  const googleWebClientId = String.fromEnvironment('ITSCLEAR_GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '859140870913-uu2j7n6cilpg9k4m7ec6aos2da6m542r.apps.googleusercontent.com');
+  final api = StoreApi(base);
+  runApp(ItsClearApp(api: api, sessionVault: AndroidSessionVault(api.base),
+    googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId)));
 }
 
 class ItsClearApp extends StatefulWidget {
-  const ItsClearApp({super.key, this.api});
+  const ItsClearApp({super.key, this.api, this.sessionVault, this.googleIdentity});
 
   final StoreApi? api;
+  final SessionVault? sessionVault;
+  final GoogleIdentity? googleIdentity;
 
   @override
   State<ItsClearApp> createState() => _ItsClearAppState();
@@ -34,7 +41,9 @@ class _ItsClearAppState extends State<ItsClearApp> {
   @override
   void initState() {
     super.initState();
-    _state = AppState(api: widget.api);
+    _state = AppState(api: widget.api, sessionVault: widget.sessionVault,
+      googleIdentity: widget.googleIdentity);
+    _state.restoreSession();
     _state.refreshStore();
   }
 
@@ -78,7 +87,7 @@ class PhoneShell extends StatelessWidget {
       '${state.filteredProducts.length} stoneground flours',
       state.isLive ? 'Tracking & receipts' : 'Batch #IC-0426',
       '${state.cartCount} items',
-      state.isLive ? 'Guest' : 'Verified member',
+      state.isLive ? (state.customer?.name ?? 'Guest') : 'Verified member',
     ];
 
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;

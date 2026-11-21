@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'auth_models.dart';
 import 'data.dart';
 
-/// The public, read-only portion of the itsclear storefront API.
+/// The storefront catalog and customer authentication API.
 class StoreApi {
   StoreApi(String baseUrl, {http.Client? client})
       : base = Uri.parse(baseUrl),
@@ -35,6 +36,100 @@ class StoreApi {
       throw const StoreApiException('The store returned an invalid response.');
     }
   }
+
+  Future<Map<String, dynamic>> _auth(List<String> route, {
+    Map<String, String>? payload, String? token,
+  }) async {
+    final request = http.Request(
+      payload == null ? 'GET' : 'POST',
+      base.replace(pathSegments: ['api', 'auth', ...route]),
+    )..followRedirects = false;
+    request.headers['Accept'] = 'application/json';
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    if (payload != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(payload);
+    }
+    final http.Response response;
+    try {
+      response = await (() async => http.Response.fromStream(await _client.send(request)))()
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      throw const AuthException('Could not reach the store. Check your connection and try again.');
+    }
+    final status = response.statusCode;
+    Map<String, dynamic> result = const {};
+    try {
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+      if (data is Map<String, dynamic>) result = data;
+    } on FormatException {
+      // HTTP errors are still handled when a proxy returns a non-JSON response.
+    }
+    if (status < 200 || status >= 300 || result['success'] == false || result.isEmpty) {
+      final hint = result['error'];
+      final message = status >= 400 && status < 500 && hint is String && hint.isNotEmpty
+          ? hint
+          : 'The store could not complete this request. Please try again.';
+      throw AuthException(message, status: status,
+          retryAfter: _wholeNumber(result['retryAfter'] ?? result['resendAfter']));
+    }
+    return result;
+  }
+
+  OtpChallenge _challenge(Map<String, dynamic> result) {
+    if (result['mode'] == 'local') {
+      throw const AuthException('The store’s email delivery is not available. Try another sign-in method.');
+    }
+    if (result['success'] != true) {
+      throw const AuthException('The store did not confirm the code request.');
+    }
+    return OtpChallenge(_wholeNumber(result['resendAfter']) ?? 30,
+        _wholeNumber(result['expiresIn']) ?? 300);
+  }
+
+  Future<OtpChallenge> requestLoginOtp(String email) async => _challenge(await _auth(
+    ['login', 'send-otp'], payload: {'email': email.trim().toLowerCase()},
+  ));
+
+  Future<CustomerSession> verifyLoginOtp(String email, String otp) async => CustomerSession.fromJson(await _auth(
+    ['login', 'verify-otp'], payload: {'email': email.trim().toLowerCase(), 'otp': otp.trim(), 'portal': 'customer'},
+  ));
+
+  Future<CustomerSession> passwordLogin(String emailOrPhone, String password) async => CustomerSession.fromJson(await _auth(
+    ['login'], payload: {'emailOrPhone': emailOrPhone.trim(), 'password': password},
+  ));
+
+  Future<OtpChallenge> startRegistration({required String name, required String mobile,
+    required String email, required String password, required String confirmPassword}) async => _challenge(await _auth(
+      ['register', 'send-otp'], payload: {'fullName': name.trim(), 'mobile': mobile.trim(),
+        'email': email.trim().toLowerCase(), 'password': password, 'confirmPassword': confirmPassword},
+  ));
+
+  Future<OtpChallenge> resendRegistrationOtp(String email) async => _challenge(await _auth(
+    ['register', 'resend-otp'], payload: {'email': email.trim().toLowerCase()},
+  ));
+
+  Future<CustomerSession> verifyRegistrationOtp(String email, String otp) async => CustomerSession.fromJson(await _auth(
+    ['register', 'verify-and-create'], payload: {'email': email.trim().toLowerCase(), 'otp': otp.trim()},
+  ));
+
+  Future<GoogleExchange> googleLogin(String credential) async {
+    final result = await _auth(['google'], payload: {'credential': credential, 'portal': 'customer'});
+    if (result['requiresLinking'] == true) {
+      final email = result['email'];
+      if (email is! String || email.isEmpty) throw const AuthException('The store did not identify the account to link.');
+      return GoogleExchange.needsLink(email);
+    }
+    return GoogleExchange.signedIn(CustomerSession.fromJson(result));
+  }
+
+  Future<CustomerSession> linkGoogleOtp(String credential, String otp) async => CustomerSession.fromJson(await _auth(
+    ['google', 'link'], payload: {'credential': credential, 'otp': otp.trim()},
+  ));
+
+  Future<CustomerAccount> currentCustomer(String token) async => CustomerAccount.fromJson(
+    (await _auth(['me'], token: token))['user'],
+  );
 
   Future<List<Product>> products() async {
     final rows = await _get(['products']);

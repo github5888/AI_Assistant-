@@ -78,10 +78,11 @@ class ShopScreen extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             itemCount: visible.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+              crossAxisCount: state.isLive && (MediaQuery.sizeOf(context).width < 350 || textExtra > 3.6)
+                  ? 1 : 2,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
-              mainAxisExtent: 258 + textExtra.clamp(0, 24).toDouble() * 7,
+              mainAxisExtent: (state.isLive ? 330 : 258) + textExtra.clamp(0, 24).toDouble() * 9,
             ),
             itemBuilder: (context, index) {
               final product = visible[index];

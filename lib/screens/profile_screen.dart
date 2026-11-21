@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../auth_models.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'calculator_screen.dart';
-import 'checkout_flow.dart';
+import 'sign_in_screen.dart';
 import 'commerce_screens.dart';
 import 'list_screens.dart';
 
@@ -16,19 +17,36 @@ class ProfileScreen extends StatelessWidget {
     final state = AppScope.of(context);
 
     if (state.isLive) {
+      final customer = state.customer;
       return ListView(
         primary: false,
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          const SectionHeader(eyebrow: 'Your account', title: 'Guest profile'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: PrimaryButton(
-              label: 'Sign in',
-              icon: Icons.login,
-              onTap: () => pushScreen(context, const SignInScreen()),
-            ),
-          ),
+          SectionHeader(eyebrow: 'Your account', title: customer == null ? 'Guest profile' : 'Welcome back'),
+          if (state.restoringSession)
+            const StoreNotice(message: 'Checking your saved session…')
+          else if (customer == null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: PrimaryButton(
+                label: 'Sign in',
+                icon: Icons.login,
+                onTap: () => pushScreen(context, const SignInScreen()),
+              ),
+            )
+          else
+            SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(customer.name, style: displayStyle(size: 23)),
+              const SizedBox(height: 5),
+              Text(customer.email, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+              TextButton.icon(icon: const Icon(Icons.logout), label: const Text('Sign out'), onPressed: () async {
+                try {
+                  await state.signOut();
+                } on AuthException catch (error) {
+                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+                }
+              }),
+            ])),
           SectionCard(child: InfoRow(
             icon: Icons.receipt_long,
             title: 'My orders & receipts',

@@ -46,6 +46,18 @@ jobs:
             /tmp/itsclear_runner
           # Keep the application's checked-in manifest (label and Internet permission).
           cp android/app/src/main/AndroidManifest.xml /tmp/itsclear_runner/android/app/src/main/AndroidManifest.xml
+          # Preserve the published application ID registered for Android OAuth.
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          generated = Path('/tmp/itsclear_runner/android/app/build.gradle.kts')
+          local = Path('android/app/build.gradle.kts').read_text()
+          app_id = re.search(r'applicationId\s*=\s*"([^"]+)"', local).group(1)
+          gradle, count = re.subn(r'applicationId\s*=\s*"[^"]+"',
+                                  f'applicationId = "{app_id}"', generated.read_text())
+          assert count == 1, 'Expected one applicationId in generated runner'
+          generated.write_text(gradle)
+          PY
           cp -a /tmp/itsclear_runner/android/. android/
           cp -a /tmp/itsclear_runner/.metadata .metadata
 

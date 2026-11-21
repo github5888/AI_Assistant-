@@ -188,7 +188,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
-    expect(find.text('Sign in with OTP'), findsOneWidget);
+    expect(find.text('Send email OTP'), findsOneWidget);
     final google = find.widgetWithText(OutlinedButton, 'Sign in with Google');
     await tester.scrollUntilVisible(google, 150, scrollable: find.byType(Scrollable).first);
     expect(tester.widget<OutlinedButton>(google).onPressed, isNull);
