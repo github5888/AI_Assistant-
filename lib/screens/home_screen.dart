@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
       primary: false,
       padding: const EdgeInsets.only(bottom: 22),
       children: [
-        const HomeIntro(),
+        const _HomeIntro(),
         SectionHeader(
           eyebrow: 'The favourites',
           title: 'Best sellers',
@@ -117,15 +117,14 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// Illustrated carousel, shortcuts and category rail shared by both storefronts.
-class HomeIntro extends StatefulWidget {
-  const HomeIntro({super.key});
+class _HomeIntro extends StatefulWidget {
+  const _HomeIntro();
 
   @override
-  State<HomeIntro> createState() => _HomeIntroState();
+  State<_HomeIntro> createState() => _HomeIntroState();
 }
 
-class _HomeIntroState extends State<HomeIntro> {
+class _HomeIntroState extends State<_HomeIntro> {
   final PageController _heroController = PageController(initialPage: 0);
 
   @override

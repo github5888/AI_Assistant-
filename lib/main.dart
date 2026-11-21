@@ -157,6 +157,19 @@ class PhoneShell extends StatelessWidget {
   List<Widget> _actions(BuildContext context, AppState state) {
     if (state.tab == 0) {
       return [
+        if (state.isLive) ...[
+          Tooltip(
+            message: 'Search products',
+            child: RoundIconButton(
+              icon: Icons.search_rounded,
+              onTap: () {
+                state.setSearchQuery('');
+                pushScreen(context, const SearchScreen());
+              },
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
         RoundIconButton(
           icon: Icons.favorite_border,
           onTap: () => pushScreen(context, const WishlistScreen()),

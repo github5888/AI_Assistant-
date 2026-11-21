@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../widgets.dart';
-import 'home_screen.dart';
+import 'live_home_sections.dart';
 import 'storefront_layout.dart';
 
 class LiveHomeScreen extends StatelessWidget {
@@ -24,10 +24,18 @@ class LiveHomeScreen extends StatelessWidget {
         primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          const SliverToBoxAdapter(child: HomeIntro()),
-          SliverToBoxAdapter(child: CatalogHeading(
-            title: 'Featured flours',
-            trailing: TextButton(onPressed: browse, child: const Text('View all')),
+          const SliverToBoxAdapter(child: Padding(
+            padding: EdgeInsets.only(top: 10), child: HomeHarvestCarousel(),
+          )),
+          const SliverToBoxAdapter(child: HomeQuickLinks()),
+          SliverToBoxAdapter(child: SectionHeader(
+            eyebrow: 'Find your flour', title: 'Shop by category',
+            action: 'See all', onAction: browse,
+          )),
+          const SliverToBoxAdapter(child: HomePhotoCategories()),
+          SliverToBoxAdapter(child: SectionHeader(
+            eyebrow: 'The favourites', title: 'Featured flours',
+            action: 'View all', onAction: browse,
           )),
           if (state.catalogError || featured.isEmpty)
             const SliverToBoxAdapter(child: CatalogStatus(emptyMessage: 'No products are listed right now.')),

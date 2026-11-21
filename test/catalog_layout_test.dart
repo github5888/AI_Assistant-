@@ -72,16 +72,48 @@ void main() {
     });
   }
 
-  testWidgets('restored hero swipes to the next illustration', (tester) async {
+  testWidgets('the illustrated hero swipes to the next product story', (tester) async {
     _phone(tester, const Size(360, 720));
     await tester.pumpWidget(ItsClearApp(api: _api()));
     await tester.pumpAndSettle();
     final hero = find.byKey(const ValueKey('home-hero-carousel'));
     final controller = tester.widget<PageView>(hero).controller!;
     expect(controller.page, closeTo(0, 0.01));
+    expect(find.text('Khapli\nChakki Atta'), findsOneWidget);
     await tester.drag(hero, const Offset(-290, 0));
     await tester.pumpAndSettle();
     expect(controller.page, closeTo(1, 0.01));
+    expect(find.text('High Protein\nAtta').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Home photo tile opens the matching Shop filter', (tester) async {
+    _phone(tester, const Size(320, 640));
+    await tester.pumpWidget(ItsClearApp(api: _api()));
+    await tester.pumpAndSettle();
+    final category = find.byKey(const ValueKey('home-category-Khapli'));
+    final scroll = find.descendant(
+      of: find.byKey(const PageStorageKey('live-home')),
+      matching: find.byType(Scrollable),
+    ).first;
+    await tester.scrollUntilVisible(category, 100, scrollable: scroll);
+    await tester.tap(category);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('a')), findsOneWidget);
+    expect(find.byKey(const ValueKey('b')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('top bar search opens the native product search', (tester) async {
+    _phone(tester, const Size(320, 640));
+    await tester.pumpWidget(ItsClearApp(api: _api()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Search products'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Protein');
+    await tester.pumpAndSettle();
+    expect(find.text('High Protein Whole Wheat Flour'), findsOneWidget);
+    expect(find.text('Khapli Stoneground Atta Family Pack'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -89,7 +121,7 @@ void main() {
     _phone(tester, const Size(320, 640), scale: 1.6);
     await tester.pumpWidget(ItsClearApp(api: _api()));
     await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull, reason: 'increased text on restored Home');
+    expect(tester.takeException(), isNull, reason: 'increased text on Home');
     await tester.tap(_dock('Shop'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'increased text on live shop');
