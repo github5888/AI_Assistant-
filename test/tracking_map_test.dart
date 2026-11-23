@@ -36,7 +36,7 @@ void main() {
     )));
     expect(find.text('Live GPS active'), findsOneWidget);
     expect(find.text('6.8 km'), findsOneWidget);
-    expect(find.text('Location supplied by the store'), findsOneWidget);
+    expect(find.text('Schematic route · location from store'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

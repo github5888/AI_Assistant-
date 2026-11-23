@@ -139,10 +139,10 @@ class TrackingMapCard extends StatelessWidget {
           const Icon(Icons.straighten_rounded, size: 15, color: AppColors.muted),
           const SizedBox(width: 5),
           Text(distanceLabel, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
-          const Spacer(),
-          Text(hasGps ? 'Schematic route · location from store' : 'Schematic preview · live location after dispatch',
-            textAlign: TextAlign.end, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
         ]),
+        const SizedBox(height: 4),
+        Text(hasGps ? 'Schematic route · location from store' : 'Schematic preview · live location after dispatch',
+          style: const TextStyle(fontSize: 10, color: AppColors.muted)),
       ]),
     );
   }
