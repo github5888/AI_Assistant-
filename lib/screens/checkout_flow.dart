@@ -338,9 +338,12 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
           ? 'Confirming…'
           : state.cartSubtotal >= config.freeDeliveryThreshold ? 'FREE'
           : 'Confirmed at order submission', positive: state.cartSubtotal >= (config?.freeDeliveryThreshold ?? 1 << 30)),
+        if (state.couponApplied)
+          _AmountRow(label: 'Coupon · ${state.appliedCouponCode ?? ''}',
+            amount: '-${money(state.couponDiscount)}', positive: true),
         const Divider(height: 20),
         _AmountRow(label: 'Total before delivery confirmation',
-          amount: money(state.cartSubtotal), prominent: true),
+          amount: money(state.cartSubtotal - state.couponDiscount), prominent: true),
       ],
       const SizedBox(height: 14),
       const Text('PAYMENT METHOD', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),

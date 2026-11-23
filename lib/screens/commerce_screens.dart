@@ -36,6 +36,20 @@ class _CartScreenState extends State<CartScreen> {
           if (threshold != null && threshold > 0)
             _LiveDeliveryProgress(subtotal: state.cartSubtotal, threshold: threshold),
           ...state.cart.map((line) => _CartLineCard(line: line)),
+          _LiveCouponEntry(
+            controller: _coupon,
+            state: state,
+            onApply: () async {
+              final applied = await state.applyLiveCoupon(_coupon.text);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(applied
+                    ? 'Coupon applied · ${money(state.couponDiscount)} off'
+                    : state.couponError ?? 'Coupon could not be applied.'),
+                behavior: SnackBarBehavior.floating,
+              ));
+            },
+          ),
           _LiveBasketSummary(state: state, threshold: threshold),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -203,13 +217,16 @@ class _LiveBasketSummary extends StatelessWidget {
           value: freeDelivery ? 'FREE' : 'Confirmed at checkout',
           green: freeDelivery,
         ),
+        if (state.couponApplied)
+          _BillRow(label: 'Coupon ${state.appliedCouponCode ?? ''}',
+            value: '− ${money(state.couponDiscount)}', green: true),
         const SizedBox(height: 8),
         Container(height: 1, color: AppColors.line),
         const SizedBox(height: 10),
         Row(children: [
           const Expanded(child: Text('Subtotal before delivery confirmation',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.ink))),
-          Text(money(state.cartSubtotal), style: displayStyle(size: 18)),
+          Text(money(state.cartSubtotal - state.couponDiscount), style: displayStyle(size: 18)),
         ]),
         const SizedBox(height: 5),
         const Align(alignment: Alignment.centerLeft, child: Text(
@@ -486,6 +503,61 @@ class _CouponCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _LiveCouponEntry extends StatelessWidget {
+  const _LiveCouponEntry({required this.controller, required this.state, required this.onApply});
+  final TextEditingController controller;
+  final AppState state;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+    padding: const EdgeInsets.fromLTRB(12, 6, 7, 6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: state.couponApplied ? const Color(0x55358A58) : AppColors.line),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Icon(Icons.confirmation_number_outlined, size: 18, color: AppColors.orange),
+        const SizedBox(width: 8),
+        Expanded(child: TextField(
+          controller: controller,
+          textCapitalization: TextCapitalization.characters,
+          onChanged: (_) { if (state.couponApplied) state.clearAppliedCoupon(); },
+          decoration: const InputDecoration(
+            hintText: 'Enter coupon code',
+            border: InputBorder.none,
+            isDense: true,
+          ),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        )),
+        const SizedBox(width: 8),
+        FilledButton.tonal(
+          onPressed: state.isApplyingCoupon ? null : onApply,
+          style: FilledButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          ),
+          child: state.isApplyingCoupon
+              ? const SizedBox.square(dimension: 15, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(state.couponApplied ? 'Applied' : 'Apply'),
+        ),
+      ]),
+      if (state.couponApplied) Padding(
+        padding: const EdgeInsets.only(left: 26, bottom: 4),
+        child: Text('${state.appliedCouponCode ?? ''} · ${money(state.couponDiscount)} saved',
+          style: const TextStyle(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w700)),
+      ) else if (state.couponError != null) Padding(
+        padding: const EdgeInsets.fromLTRB(26, 0, 8, 4),
+        child: Text(state.couponError!,
+          style: const TextStyle(fontSize: 11, color: Color(0xFFB3261E))),
+      ),
+    ]),
+  );
 }
 
 class _BillCard extends StatelessWidget {

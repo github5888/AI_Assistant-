@@ -94,6 +94,7 @@ class AppState extends ChangeNotifier {
     if (_disposed) return;
     _session = null;
     _customerOrders = const [];
+    _clearLiveCoupon();
     orderStatusCheckRequired = false;
     customerOrdersError = null;
     notifyListeners();
@@ -185,6 +186,10 @@ class AppState extends ChangeNotifier {
   int slotIndex = 0;
   int paymentIndex = 0;
   bool couponApplied = false;
+  String? appliedCouponCode;
+  int _liveCouponDiscount = 0;
+  bool isApplyingCoupon = false;
+  String? couponError;
   bool orderPlaced = false;
   String orderId = 'IC91032';
   bool isSubmittingOrder = false;
@@ -204,7 +209,9 @@ class AppState extends ChangeNotifier {
   int get cartMrp => cart.fold(0, (sum, line) => sum + line.mrpTotal);
   int get cartSavings => cartMrp - cartSubtotal;
   int get delivery => cartSubtotal >= 499 || cart.isEmpty ? 0 : 49;
-  int get couponDiscount => couponApplied ? 50 : 0;
+  int get couponDiscount => isLive
+      ? (couponApplied ? _liveCouponDiscount : 0)
+      : couponApplied ? 50 : 0;
   int get cartTotal {
     final value = cartSubtotal + delivery - couponDiscount;
     return value < 0 ? 0 : value;
@@ -304,6 +311,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _clearLiveCoupon() {
+    couponApplied = false;
+    appliedCouponCode = null;
+    _liveCouponDiscount = 0;
+    couponError = null;
+  }
+
   bool addToCart(Product product, ProductSize size, int qty) {
     if (qty <= 0 || !size.inStock) return false;
     final key = '${product.id}_${size.id ?? size.label}';
@@ -316,6 +330,7 @@ class AppState extends ChangeNotifier {
     } else {
       cart.add(CartLine(key: key, product: product, size: size, qty: qty));
     }
+    if (isLive) _clearLiveCoupon();
     notifyListeners();
     return true;
   }
@@ -328,13 +343,17 @@ class AppState extends ChangeNotifier {
     } else {
       final stock = cart[index].size.stockCount;
       if (stock != null && qty > stock) return;
+      if (cart[index].qty == qty) return;
       cart[index].qty = qty;
     }
+    if (isLive) _clearLiveCoupon();
     notifyListeners();
   }
 
   void removeFromCart(String key) {
+    final previousLength = cart.length;
     cart.removeWhere((line) => line.key == key);
+    if (cart.length != previousLength && isLive) _clearLiveCoupon();
     notifyListeners();
   }
 
@@ -342,8 +361,58 @@ class AppState extends ChangeNotifier {
     if (isLive) return false;
     final ok = code.trim().toUpperCase() == 'CLEAR50';
     couponApplied = ok;
+    appliedCouponCode = ok ? 'CLEAR50' : null;
     notifyListeners();
     return ok;
+  }
+
+  void clearAppliedCoupon() {
+    _clearLiveCoupon();
+    notifyListeners();
+  }
+
+  Future<bool> applyLiveCoupon(String code) async {
+    final service = api;
+    final normalized = code.trim().toUpperCase();
+    if (service == null || !isLive) return false;
+    if (normalized.isEmpty) {
+      couponError = 'Enter a coupon code.';
+      notifyListeners();
+      return false;
+    }
+    if (isApplyingCoupon) return false;
+    isApplyingCoupon = true;
+    couponError = null;
+    final validatedSubtotal = cartSubtotal;
+    notifyListeners();
+    try {
+      final result = await service.validateCoupon(
+        token: _session?.token,
+        code: normalized,
+        subtotal: validatedSubtotal,
+      );
+      if (_disposed) return false;
+      if (validatedSubtotal != cartSubtotal) {
+        couponError = 'Basket changed. Apply the coupon again.';
+        return false;
+      }
+      appliedCouponCode = result.code;
+      _liveCouponDiscount = result.discount.clamp(0, cartSubtotal).toInt();
+      couponApplied = _liveCouponDiscount > 0;
+      if (!couponApplied) couponError = 'This coupon does not apply to the current basket.';
+      return couponApplied;
+    } on StoreApiException catch (error) {
+      if (!_disposed) {
+        couponApplied = false;
+        appliedCouponCode = null;
+        _liveCouponDiscount = 0;
+        couponError = error.message;
+      }
+      return false;
+    } finally {
+      isApplyingCoupon = false;
+      if (!_disposed) notifyListeners();
+    }
   }
 
   Future<Map<String, dynamic>> submitLiveOrder({
@@ -379,6 +448,7 @@ class AppState extends ChangeNotifier {
         'quantity': line.qty,
       });
     }
+    final couponCode = couponApplied ? appliedCouponCode : null;
     isSubmittingOrder = true;
     customerOrdersError = null;
     var finalOrderRequestStarted = false;
@@ -392,6 +462,7 @@ class AppState extends ChangeNotifier {
           items: items,
           shippingAddress: shippingAddress,
           paymentMethod: paymentMethod,
+          couponCode: couponCode,
         );
         proof = await gateway.pay(
           order: paymentOrder,
@@ -406,12 +477,13 @@ class AppState extends ChangeNotifier {
         shippingAddress: shippingAddress,
         paymentMethod: paymentMethod,
         paymentProof: proof,
+        couponCode: couponCode,
       );
       if (!_disposed && identical(_session, session)) {
         _customerOrders = List.unmodifiable([order, ..._customerOrders
             .where((existing) => existing['id'] != order['id'])]);
         cart.clear();
-        couponApplied = false;
+        _clearLiveCoupon();
         orderStatusCheckRequired = false;
         notifyListeners();
       }

@@ -36,6 +36,28 @@ Map<String, Object> get configFixture => {
 };
 
 void main() {
+  test('validates a coupon through the live coupon API and returns server discount', () async {
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      expect(request.method, 'POST');
+      expect(request.url.path, '/api/coupons/validate');
+      expect(request.headers['authorization'], 'Bearer customer-session');
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      expect(body['code'], 'WELCOME20');
+      expect(body['subtotal'], 800);
+      expect(body['orderAmount'], 800);
+      return jsonAnswer({
+        'success': true,
+        'coupon': {'code': 'WELCOME20', 'discountAmount': 160},
+      });
+    }));
+    addTearDown(api.close);
+    final result = await api.validateCoupon(
+      token: 'customer-session', code: ' welcome20 ', subtotal: 800,
+    );
+    expect(result.code, 'WELCOME20');
+    expect(result.discount, 160);
+  });
+
   test('loads observed catalog, detail, config, health and scopes reviews', () async {
     final api = StoreApi('https://example.test', client: MockClient((request) async {
       expect(request.method, 'GET');
