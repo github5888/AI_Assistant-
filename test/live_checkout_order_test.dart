@@ -26,6 +26,8 @@ void main() {
     addTearDown(tester.view.reset);
 
     var submitted = false;
+    Map<String, dynamic>? submittedBody;
+    String? submittedAuthorization;
     final requests = <String>[];
     final api = StoreApi('https://checkout.example.test', client: MockClient((request) async {
       requests.add('${request.method} ${request.url.path}');
@@ -48,16 +50,9 @@ void main() {
             'name': 'Demo Buyer', 'role': 'customer'}};
         }(),
         '/api/orders' when request.method == 'POST' => () {
-          expect(request.headers['authorization'], 'Bearer valid-customer-token');
-          final body = jsonDecode(request.body) as Map<String, dynamic>;
-          expect(body['paymentMethod'], 'cod');
-          expect(body['items'], [
-            {'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 1},
-          ]);
-          final address = body['shippingAddress'] as Map<String, dynamic>;
-          expect(address['name'], 'Demo Buyer');
-          expect(address['phone'], '9876543210');
-          expect(address['pincode'], '226010');
+          submittedAuthorization = request.headers['authorization'];
+          submittedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          final address = submittedBody!['shippingAddress'] as Map<String, dynamic>;
           submitted = true;
           return {
             'id': 'ord-live-test', 'orderNumber': 'CLR-2026-1234',
@@ -133,6 +128,15 @@ void main() {
     expect(submitted, isTrue,
       reason: 'Checkout did not POST the order. Cart=${appState.cartCount}; '
         'busy=${appState.isSubmittingOrder}; requests=$requests; screen text=$visibleText');
+    expect(submittedAuthorization, 'Bearer valid-customer-token');
+    expect(submittedBody?['paymentMethod'], 'cod');
+    expect(submittedBody?['items'], [
+      {'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 1},
+    ]);
+    final submittedAddress = submittedBody?['shippingAddress'] as Map<String, dynamic>;
+    expect(submittedAddress['name'], 'Demo Buyer');
+    expect(submittedAddress['phone'], '9876543210');
+    expect(submittedAddress['pincode'], '226010');
     expect(find.text('CLR-2026-1234'), findsOneWidget);
     expect(find.text('The store has confirmed your order.'), findsOneWidget);
     await tester.tap(find.text('View my orders'));
