@@ -543,16 +543,17 @@ class _BillRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.muted)),
-          const Spacer(),
-          Text(
-            value,
+          Expanded(child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10, color: AppColors.muted))),
+          const SizedBox(width: 8),
+          Flexible(child: Text(value, textAlign: TextAlign.end, maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               color: green ? AppColors.green : AppColors.ink,
             ),
-          ),
+          )),
         ],
       ),
     );

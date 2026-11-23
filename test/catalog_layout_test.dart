@@ -151,7 +151,8 @@ void main() {
     await tester.tap(_dock('Basket'));
     await tester.pumpAndSettle();
     expect(find.text('Khapli Stoneground Atta Family Pack'), findsOneWidget);
-    expect(find.textContaining('Item subtotal: ₹1,650'), findsOneWidget);
+    expect(find.text('Items subtotal'), findsOneWidget);
+    expect(find.textContaining('₹1,650'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }
