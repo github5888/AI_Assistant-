@@ -124,7 +124,11 @@ void main() {
     await tester.tap(submitButton);
     await tester.pumpAndSettle();
 
-    expect(submitted, isTrue);
+    final visibleText = tester.widgetList<Text>(find.byType(Text))
+        .map((widget) => widget.data ?? '').where((text) => text.isNotEmpty).join(' | ');
+    expect(submitted, isTrue,
+      reason: 'Checkout did not POST the order. Cart=${appState.cartCount}; '
+        'busy=${appState.isSubmittingOrder}; screen text=$visibleText');
     expect(find.text('CLR-2026-1234'), findsOneWidget);
     expect(find.text('The store has confirmed your order.'), findsOneWidget);
     await tester.tap(find.text('View my orders'));
