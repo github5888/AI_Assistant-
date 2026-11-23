@@ -191,7 +191,7 @@ class _LiveBasketSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final freeDelivery = threshold != null && threshold > 0 && state.cartSubtotal >= threshold;
+    final freeDelivery = (threshold ?? 0) > 0 && state.cartSubtotal >= (threshold ?? 0);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 2, 16, 0),
       padding: const EdgeInsets.all(16),
