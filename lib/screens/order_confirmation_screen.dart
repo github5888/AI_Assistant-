@@ -4,6 +4,7 @@ import '../app_state.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'tracking_map_card.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {
   const OrderConfirmationScreen({super.key, required this.order});
@@ -46,7 +47,9 @@ class OrderConfirmationScreen extends StatelessWidget {
             subtitle: status, trailing: order['estimatedDelivery'] is String
                 ? order['estimatedDelivery'] as String : null),
         ])),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
+        TrackingMapCard(order: order),
+        const SizedBox(height: 4),
         PrimaryButton(
           label: 'View my orders',
           icon: Icons.receipt_long_outlined,

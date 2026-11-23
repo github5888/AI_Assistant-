@@ -253,6 +253,8 @@ class HomePhotoCategories extends StatelessWidget {
     (filter: 'Protein', label: 'Protein', image: AppImages.protein, tone: Color(0xFFEAF1E2)),
     (filter: 'Family', label: 'Family', image: AppImages.handle, tone: Color(0xFFF9E7DE)),
     (filter: 'Bundle', label: 'Bundles', image: AppImages.duo, tone: Color(0xFFF0ECF5)),
+    (filter: 'Mustard Oil', label: 'Mustard oil', image: AppImages.mustardOil, tone: Color(0xFFFFF3DC)),
+    (filter: 'Desi Ghee', label: 'Desi ghee', image: AppImages.desiGhee, tone: Color(0xFFFFEFC5)),
   ];
 
   @override

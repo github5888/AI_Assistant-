@@ -320,7 +320,12 @@ class StoreApi {
     }
     if (sizes.isEmpty) return null;
 
-    final isProtein = row['category'] == 'multigrain';
+    final category = _text(row['category'] ?? row['categoryName'] ?? row['type']).toLowerCase();
+    final searchable = '$category ${id.toLowerCase()} ${name.toLowerCase()}';
+    final isProtein = searchable.contains('multigrain') || searchable.contains('protein');
+    final isMustardOil = searchable.contains('mustard') || category == 'oil' || category.contains('oil_');
+    final isDesiGhee = searchable.contains('ghee');
+    final isKhapli = category.contains('khapli');
     final featured = row['featured'] == true;
     final images = row['images'];
     final gallery = <String>[];
@@ -333,27 +338,34 @@ class StoreApi {
             url.origin == base.origin && url.userInfo.isEmpty) gallery.add(url.toString());
       }
     }
-    final fallback = isProtein ? AppImages.protein : AppImages.khapli;
+    final fallback = isProtein ? AppImages.protein
+        : isMustardOil ? AppImages.mustardOil
+        : isDesiGhee ? AppImages.desiGhee
+        : AppImages.khapli;
     final nutrition = row['nutrition'];
     final rating = row['rating'];
     return Product(
       id: id,
       databaseId: _text(row['_id']),
       name: name,
-      subtitle: _text(row['subTitle']),
+      subtitle: _text(row['subTitle'] ?? row['subtitle']),
       origin: _text(row['origin']),
       rating: rating is num && rating.isFinite ? rating.clamp(0, 5).toDouble() : 0,
       reviews: _wholeNumber(row['reviewCount']) ?? 0,
       image: gallery.isEmpty ? fallback : gallery.first,
       gallery: List.unmodifiable(gallery),
       fallbackImage: fallback,
-      tag: featured ? 'Featured' : (isProtein ? 'Protein' : 'Stoneground'),
+      tag: featured ? 'Featured' : isMustardOil ? 'Cold Pressed'
+          : isDesiGhee ? 'Bilona Ghee'
+          : isProtein ? 'Protein' : 'Stoneground',
       featured: featured,
       groups: [
         if (isProtein) 'Protein',
-        if (row['category'] == 'khapli') 'Khapli',
-        if (id.contains('family') || id.contains('handle')) 'Family',
-        if (id.contains('duo')) 'Bundle',
+        if (isKhapli || searchable.contains('khapli')) 'Khapli',
+        if (isMustardOil) 'Mustard Oil',
+        if (isDesiGhee) 'Desi Ghee',
+        if (searchable.contains('family') || searchable.contains('handle')) 'Family',
+        if (searchable.contains('duo') || category.contains('combo') || category.contains('bundle')) 'Bundle',
       ],
       sizes: List.unmodifiable(sizes),
       description: _text(row['description']),

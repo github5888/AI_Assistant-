@@ -7,6 +7,8 @@ class AppImages {
   static const handle = 'assets/images/pack-handle.png';
   static const roti = 'assets/images/lifestyle-roti.jpg';
   static const chakki = 'assets/images/story-chakki.jpg';
+  static const mustardOil = 'assets/images/mustard-oil-reference.jpg';
+  static const desiGhee = 'assets/images/desi-ghee-reference.jpg';
 }
 
 String money(int value) {
@@ -332,7 +334,9 @@ const notifications = <NotificationItem>[
   NotificationItem('EV delivery expanded', '2-hour delivery is now available at pincode 226001.', '4 days ago'),
 ];
 
-const categoryFilters = <String>['All', 'Khapli', 'Protein', 'Family', 'Bundle'];
+const categoryFilters = <String>[
+  'All', 'Khapli', 'Protein', 'Family', 'Bundle', 'Mustard Oil', 'Desi Ghee',
+];
 const sortLabels = <String>['Featured', 'Price', 'Rating'];
 const viewerTabs = <ViewerTab>[
   ViewerTab('Front', 0),

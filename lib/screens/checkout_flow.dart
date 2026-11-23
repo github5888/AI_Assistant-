@@ -9,6 +9,7 @@ import '../payment_models.dart';
 import '../widgets.dart';
 import 'sign_in_screen.dart';
 import 'order_confirmation_screen.dart';
+import 'tracking_map_card.dart';
 
 /// Native, authenticated COD and UPI checkout backed by the live order API.
 /// Order confirmation and payment state always come from the server.
@@ -800,6 +801,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           const SizedBox(height: 8),
           _TrackingProgress(status: rawStatus, step: order['trackingStep']),
         ])),
+        const SizedBox(height: 12),
+        TrackingMapCard(order: order),
         Align(alignment: Alignment.centerRight, child: TextButton.icon(
           onPressed: _refreshing ? null : _refreshOrder,
           icon: _refreshing

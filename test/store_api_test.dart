@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:itsclear_app/app_state.dart';
 import 'package:itsclear_app/main.dart';
+import 'package:itsclear_app/data.dart';
 import 'package:itsclear_app/widgets.dart';
 import 'package:itsclear_app/store_api.dart';
 
@@ -71,6 +72,32 @@ void main() {
     expect(config.onlinePaymentsEnabled, isFalse);
     expect(config.freeDeliveryThreshold, 399);
     expect(await api.healthy(), isTrue);
+  });
+
+  test('maps mustard oil and desi ghee catalog categories to their packaging assets', () async {
+    final api = StoreApi('https://example.test', client: MockClient((request) async =>
+      jsonAnswer([
+        {'id': 'wooden-kohlu-mustard-oil', 'name': 'Cold Pressed Mustard Oil',
+          'category': 'mustard_oil', 'subTitle': 'Wooden Kohlu Pressed',
+          'variants': [{'id': 'oil-500ml', 'size': '500 ml Glass Bottle',
+            'price': 145, 'originalPrice': 175, 'inStock': true, 'stockCount': 80}]},
+        {'id': 'traditional-desi-ghee', 'name': 'Traditional Desi Ghee',
+          'category': 'desi-ghee', 'subtitle': 'Bilona churned',
+          'variants': [{'id': 'ghee-500ml', 'size': '500 ml Glass Jar',
+            'price': 549, 'originalPrice': 649, 'inStock': true, 'stockCount': 75}]},
+      ])));
+    addTearDown(api.close);
+    final products = await api.products();
+    final oil = products.firstWhere((product) => product.id == 'wooden-kohlu-mustard-oil');
+    final ghee = products.firstWhere((product) => product.id == 'traditional-desi-ghee');
+    expect(oil.groups, contains('Mustard Oil'));
+    expect(oil.tag, 'Cold Pressed');
+    expect(oil.image, AppImages.mustardOil);
+    expect(oil.sizes.single.id, 'oil-500ml');
+    expect(ghee.groups, contains('Desi Ghee'));
+    expect(ghee.tag, 'Bilona Ghee');
+    expect(ghee.image, AppImages.desiGhee);
+    expect(ghee.sizes.single.id, 'ghee-500ml');
   });
 
   test('rejects insecure API origins and handles bad catalog responses', () async {

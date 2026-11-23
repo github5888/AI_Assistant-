@@ -60,7 +60,7 @@ class CatalogSearchBar extends StatelessWidget {
             child: Row(children: [
               const Icon(Icons.search_rounded, color: AppColors.ink, size: 20),
               const SizedBox(width: 9),
-              const Expanded(child: Text('Search atta, flour or pack size', maxLines: 1, overflow: TextOverflow.ellipsis,
+              const Expanded(child: Text('Search atta, oil, ghee or pack size', maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600))),
               const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.muted),
             ]),
@@ -74,7 +74,8 @@ class CatalogSearchBar extends StatelessWidget {
 class CatalogCategoryStrip extends StatelessWidget {
   const CatalogCategoryStrip({super.key});
   static const _icons = [Icons.grid_view_rounded, Icons.grass_rounded,
-    Icons.bolt_rounded, Icons.shopping_bag_outlined, Icons.inventory_2_outlined];
+    Icons.bolt_rounded, Icons.shopping_bag_outlined, Icons.inventory_2_outlined,
+    Icons.water_drop_outlined, Icons.local_drink_outlined];
 
   @override
   Widget build(BuildContext context) {
