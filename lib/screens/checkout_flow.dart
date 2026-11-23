@@ -475,12 +475,14 @@ class _AmountRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
     child: Row(children: [
-      Expanded(child: Text(label, style: TextStyle(fontSize: prominent ? 13 : 12,
+      Expanded(flex: 3, child: Text(label, style: TextStyle(fontSize: prominent ? 13 : 12,
         color: prominent ? AppColors.ink : AppColors.muted,
         fontWeight: prominent ? FontWeight.w900 : FontWeight.w500))),
-      Text(amount, textAlign: TextAlign.end, style: TextStyle(fontSize: prominent ? 15 : 12,
-        color: positive ? AppColors.green : AppColors.ink,
-        fontWeight: prominent ? FontWeight.w900 : FontWeight.w700)),
+      const SizedBox(width: 8),
+      Expanded(flex: 2, child: Text(amount, textAlign: TextAlign.end,
+        style: TextStyle(fontSize: prominent ? 15 : 12,
+          color: positive ? AppColors.green : AppColors.ink,
+          fontWeight: prominent ? FontWeight.w900 : FontWeight.w700))),
     ]),
   );
 }

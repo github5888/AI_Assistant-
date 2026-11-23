@@ -63,6 +63,8 @@ void main() {
     await tester.enterText(fields.at(2), '226010');
     await tester.enterText(fields.at(3), 'Lucknow');
     await tester.enterText(fields.at(4), '12, Gomti Nagar');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('SAVE & DELIVER HERE'));
     await tester.tap(find.text('SAVE & DELIVER HERE'));
     await tester.pumpAndSettle();
