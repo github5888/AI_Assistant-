@@ -119,6 +119,8 @@ void main() {
     final appState = AppScope.of(tester.element(submit));
     expect(appState.customer?.id, 'customer-1');
     expect(appState.cartCount, 1);
+    expect(appState.cart.single.size.id, 'kh-1kg');
+    expect(appState.isSubmittingOrder, isFalse);
     expect(appState.storeConfig?.codEnabled, isTrue);
     final submitButton = find.ancestor(of: submit, matching: find.byType(FilledButton)).first;
     expect(tester.widget<FilledButton>(submitButton).onPressed, isNotNull);
