@@ -120,8 +120,8 @@ void main() {
     expect(appState.storeConfig?.codEnabled, isTrue);
     final submitButton = find.ancestor(of: submit, matching: find.byType(FilledButton)).first;
     expect(tester.widget<FilledButton>(submitButton).onPressed, isNotNull);
-    await tester.ensureVisible(submit);
-    await tester.tap(submit);
+    await tester.ensureVisible(submitButton);
+    await tester.tap(submitButton);
     await tester.pumpAndSettle();
 
     expect(submitted, isTrue);
