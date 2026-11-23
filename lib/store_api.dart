@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'auth_models.dart';
 import 'data.dart';
+import 'payment_models.dart';
 
 /// The storefront catalog and customer authentication API.
 class StoreApi {
@@ -170,6 +171,114 @@ class StoreApi {
     return row is Map && row['status'] == 'online' && row['dbStatus'] == 'connected';
   }
 
+  Future<Object?> _orderRequest(List<String> route, String method, String token, {
+    Map<String, Object?>? payload,
+    String resource = 'orders',
+  }) async {
+    final request = http.Request(method, base.replace(pathSegments: ['api', resource, ...route]))
+      ..followRedirects = false;
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    if (payload != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(payload);
+    }
+    final http.Response response;
+    try {
+      response = await http.Response.fromStream(await _client.send(request))
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      throw const StoreApiException('Could not reach the store. Check your connection and try again.');
+    }
+    Object? result;
+    try {
+      result = jsonDecode(utf8.decode(response.bodyBytes));
+    } on FormatException {
+      throw const StoreApiException('The store returned an invalid order response.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final row = result is Map<String, dynamic> ? result : const <String, dynamic>{};
+      final message = response.statusCode < 500 && row['error'] is String
+          ? row['error'] as String
+          : 'The store could not complete this order. Please try again.';
+      throw StoreApiException(message, status: response.statusCode);
+    }
+    return result;
+  }
+
+  Map<String, Object?> _orderQuotePayload({
+    required List<Map<String, Object?>> items,
+    required Map<String, Object?> shippingAddress,
+    required String paymentMethod,
+  }) => {
+    'items': items,
+    'shippingAddress': shippingAddress,
+    'paymentMethod': paymentMethod,
+    'deliverySlot': '2-Hour Farm Express',
+    'ecoPackaging': true,
+  };
+
+  Future<RazorpayOrder> createRazorpayOrder({
+    required String token,
+    required List<Map<String, Object?>> items,
+    required Map<String, Object?> shippingAddress,
+    required String paymentMethod,
+  }) async {
+    final payload = await _orderRequest(['create-order'], 'POST', token,
+      payload: _orderQuotePayload(items: items, shippingAddress: shippingAddress,
+        paymentMethod: paymentMethod),
+      resource: 'payments');
+    return RazorpayOrder.fromJson(payload);
+  }
+
+  Future<Map<String, dynamic>> createOrder({
+    required String token,
+    required List<Map<String, Object?>> items,
+    required Map<String, Object?> shippingAddress,
+    required String paymentMethod,
+    RazorpayPaymentProof? paymentProof,
+  }) async {
+    final result = await _orderRequest([], 'POST', token, payload: {
+      ..._orderQuotePayload(items: items, shippingAddress: shippingAddress,
+        paymentMethod: paymentMethod),
+      if (paymentProof != null) 'paymentProof': paymentProof.toJson(),
+    });
+    if (result is! Map<String, dynamic> || result['id'] is! String ||
+        (result['orderNumber'] is! String && result['id'] is! String)) {
+      throw const StoreApiException('The store did not return a valid order confirmation.');
+    }
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
+  Future<List<Map<String, dynamic>>> customerOrders(String token) async {
+    final result = await _orderRequest([], 'GET', token);
+    if (result is! List) throw const StoreApiException('The store returned an invalid order list.');
+    return List.unmodifiable(result.whereType<Map<String, dynamic>>()
+        .map((row) => Map<String, dynamic>.unmodifiable(row)));
+  }
+
+  Future<Map<String, dynamic>> customerOrder(String idOrNumber, String token) async {
+    final result = await _orderRequest([idOrNumber], 'GET', token);
+    if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid order.');
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
+  Future<Map<String, dynamic>> cancelOrder(String id, String token, {String? reason}) async {
+    final result = await _orderRequest([id, 'cancel'], 'POST', token, payload: {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+    if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid order update.');
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
+  Future<Map<String, dynamic>> requestOrderReturn(String id, String token, {String? reason}) async {
+    final result = await _orderRequest([id, 'return'], 'POST', token, payload: {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+    if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid return request.');
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
   Future<List<StoreReview>> reviews(Product product) async {
     final rows = await _get(['reviews'], query: {'productId': product.id});
     if (rows is! List) throw const StoreApiException('Reviews could not be read.');
@@ -276,6 +385,7 @@ class StoreReview {
 }
 
 class StoreApiException implements Exception {
-  const StoreApiException(this.message);
+  const StoreApiException(this.message, {this.status});
   final String message;
+  final int? status;
 }

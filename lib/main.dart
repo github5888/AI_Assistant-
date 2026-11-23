@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'app_state.dart';
 import 'auth_platform.dart';
+import 'payment_platform.dart';
 import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -22,15 +23,17 @@ void main() {
     defaultValue: '859140870913-uu2j7n6cilpg9k4m7ec6aos2da6m542r.apps.googleusercontent.com');
   final api = StoreApi(base);
   runApp(ItsClearApp(api: api, sessionVault: AndroidSessionVault(api.base),
-    googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId)));
+    googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId),
+    paymentGateway: NativeRazorpayGateway()));
 }
 
 class ItsClearApp extends StatefulWidget {
-  const ItsClearApp({super.key, this.api, this.sessionVault, this.googleIdentity});
+  const ItsClearApp({super.key, this.api, this.sessionVault, this.googleIdentity, this.paymentGateway});
 
   final StoreApi? api;
   final SessionVault? sessionVault;
   final GoogleIdentity? googleIdentity;
+  final PaymentGateway? paymentGateway;
 
   @override
   State<ItsClearApp> createState() => _ItsClearAppState();
@@ -43,7 +46,7 @@ class _ItsClearAppState extends State<ItsClearApp> {
   void initState() {
     super.initState();
     _state = AppState(api: widget.api, sessionVault: widget.sessionVault,
-      googleIdentity: widget.googleIdentity);
+      googleIdentity: widget.googleIdentity, paymentGateway: widget.paymentGateway);
     _state.restoreSession();
     _state.refreshStore();
   }

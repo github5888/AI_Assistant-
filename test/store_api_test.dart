@@ -158,12 +158,12 @@ void main() {
     await tester.tap(find.text('Continue to checkout'));
     await tester.pumpAndSettle();
     expect(find.text('Checkout'), findsOneWidget);
-    expect(find.text('Contact & address'), findsOneWidget);
+    expect(find.text('Delivery address'), findsOneWidget);
     final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.text('Place order'), 300, scrollable: scrollable);
-    expect(find.text('Currently disabled by the store'), findsOneWidget);
-    final submit = find.widgetWithText(FilledButton, 'Place order');
-    expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+    await tester.scrollUntilVisible(find.text('Sign in to place order'), 300, scrollable: scrollable);
+    expect(find.text('Currently unavailable'), findsOneWidget);
+    final submit = find.widgetWithText(FilledButton, 'Sign in to place order');
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
     expect(tester.takeException(), isNull);
   });
 
