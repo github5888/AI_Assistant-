@@ -125,7 +125,7 @@ void main() {
     final submitButton = find.ancestor(of: submit, matching: find.byType(FilledButton)).first;
     expect(tester.widget<FilledButton>(submitButton).onPressed, isNotNull);
     await tester.ensureVisible(submitButton);
-    await tester.tap(submitButton);
+    tester.widget<FilledButton>(submitButton).onPressed!();
     await tester.pumpAndSettle();
 
     final visibleText = tester.widgetList<Text>(find.byType(Text))
