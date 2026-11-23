@@ -76,7 +76,7 @@ void main() {
         expect(request.method, 'POST');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['paymentMethod'], 'upi');
-        expect(body['items'], [{'productId': 'khapli', 'variantId': '1kg', 'quantity': 1}]);
+        expect(body['items'], [{'productId': 'db-khapli', 'variantId': '1kg', 'quantity': 1}]);
         return http.Response(jsonEncode({
           'keyId': 'rzp_test_key', 'providerOrderId': 'order_gateway_1',
           'amount': 12300, 'currency': 'INR',
@@ -87,6 +87,7 @@ void main() {
         expect(request.method, 'POST');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['paymentMethod'], 'upi');
+        expect(body['items'], [{'productId': 'db-khapli', 'variantId': '1kg', 'quantity': 1}]);
         expect(body['paymentProof'], {
           'razorpayOrderId': 'order_gateway_1',
           'razorpayPaymentId': 'pay_gateway_1',
@@ -112,7 +113,8 @@ void main() {
       CustomerAccount(id: 'customer-1', email: 'buyer@example.test', name: 'Buyer'),
       'customer-session',
     ));
-    const product = Product(id: 'khapli', name: 'Khapli Atta', subtitle: '', origin: '',
+    const product = Product(id: 'khapli', databaseId: 'db-khapli',
+      name: 'Khapli Atta', subtitle: '', origin: '',
       rating: 0, reviews: 0, image: AppImages.khapli, tag: '', groups: [],
       sizes: [ProductSize('1 kg', 123, 123, id: '1kg')]);
     expect(state.addToCart(product, product.sizes.single, 1), isTrue);

@@ -34,7 +34,8 @@ void main() {
       final response = switch (request.url.path) {
         '/api/products' => [
           {
-            'id': 'khapli-family', 'name': 'Khapli Atta', 'category': 'khapli', 'featured': true,
+            'id': 'khapli-family', '_id': 'db-khapli-family',
+            'name': 'Khapli Atta', 'category': 'khapli', 'featured': true,
             'variants': [
               {'id': 'kh-1kg', 'size': '1 kg', 'weightInKg': 1, 'price': 95,
                 'originalPrice': 115, 'inStock': true, 'stockCount': 8},
@@ -131,7 +132,7 @@ void main() {
     expect(submittedAuthorization, 'Bearer valid-customer-token');
     expect(submittedBody?['paymentMethod'], 'cod');
     expect(submittedBody?['items'], [
-      {'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 1},
+      {'productId': 'db-khapli-family', 'variantId': 'kh-1kg', 'quantity': 1},
     ]);
     final submittedAddress = submittedBody?['shippingAddress'] as Map<String, dynamic>;
     expect(submittedAddress['name'], 'Demo Buyer');

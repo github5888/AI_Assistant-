@@ -368,8 +368,13 @@ class AppState extends ChangeNotifier {
       if (variantId == null || variantId.isEmpty) {
         throw const StoreApiException('A selected pack is missing its store variant. Please refresh the catalog.');
       }
+      // The store's order endpoint resolves product references against the
+      // database record, while `id` is the public catalog slug. Prefer the
+      // API's canonical database id when it is present.
+      final databaseId = line.product.databaseId?.trim();
       items.add({
-        'productId': line.product.id,
+        'productId': databaseId == null || databaseId.isEmpty
+            ? line.product.id : databaseId,
         'variantId': variantId,
         'quantity': line.qty,
       });
