@@ -181,6 +181,9 @@ void main() {
     await tester.tap(find.textContaining('Add ·'));
     await tester.pumpAndSettle();
     expect(find.text('Your basket'), findsOneWidget);
+    expect(find.text('Fresh Chakki Basket'), findsOneWidget);
+    expect(find.textContaining('Add ₹304 for free delivery'), findsOneWidget);
+    expect(find.text('Items subtotal'), findsOneWidget);
     expect(find.text('Open store website'), findsNothing);
     await tester.tap(find.text('Continue to checkout'));
     await tester.pumpAndSettle();

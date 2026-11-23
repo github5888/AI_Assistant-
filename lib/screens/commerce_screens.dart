@@ -32,9 +32,11 @@ class _CartScreenState extends State<CartScreen> {
         primary: false,
         padding: const EdgeInsets.only(bottom: 24),
         children: [
+          _LiveBasketHeading(itemCount: state.cartCount),
+          if (threshold != null && threshold > 0)
+            _LiveDeliveryProgress(subtotal: state.cartSubtotal, threshold: threshold),
           ...state.cart.map((line) => _CartLineCard(line: line)),
-          StoreNotice(message: 'Item subtotal: ${money(state.cartSubtotal)}'
-            '${threshold != null && threshold > 0 ? '\nWebsite free-delivery threshold: ${money(threshold)}' : ''}'),
+          _LiveBasketSummary(state: state, threshold: threshold),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: PrimaryButton(
@@ -42,6 +44,18 @@ class _CartScreenState extends State<CartScreen> {
               icon: Icons.arrow_forward,
               onTap: () => pushScreen(context, const CheckoutScreen()),
             ),
+          ),
+          const SizedBox(height: 10),
+          const Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 5,
+            children: [
+              Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.muted),
+              Text('Secure checkout · final order total confirmed by the store',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10, color: AppColors.muted)),
+            ],
           ),
         ],
       );
@@ -93,6 +107,117 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ],
           );
+  }
+}
+
+class _LiveBasketHeading extends StatelessWidget {
+  const _LiveBasketHeading({required this.itemCount});
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+    child: Row(children: [
+      Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF2E6),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.shopping_bag_outlined, color: AppColors.orange, size: 21),
+      ),
+      const SizedBox(width: 11),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Fresh Chakki Basket',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.ink)),
+        const SizedBox(height: 2),
+        Text('$itemCount ${itemCount == 1 ? 'item' : 'items'} ready for checkout',
+          style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+      ])),
+      const Icon(Icons.verified_outlined, color: AppColors.green, size: 19),
+    ]),
+  );
+}
+
+class _LiveDeliveryProgress extends StatelessWidget {
+  const _LiveDeliveryProgress({required this.subtotal, required this.threshold});
+  final int subtotal;
+  final int threshold;
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked = subtotal >= threshold;
+    final progress = (subtotal / threshold).clamp(0.0, 1.0).toDouble();
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: unlocked ? const Color(0xFFEAF8F0) : const Color(0xFFFFF7E8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: unlocked ? const Color(0x22358A58) : const Color(0x33C6922F)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(unlocked ? Icons.check_circle_outline_rounded : Icons.local_shipping_outlined,
+            size: 17, color: unlocked ? AppColors.green : AppColors.gold),
+          const SizedBox(width: 7),
+          Expanded(child: Text(unlocked ? 'Free farm-fresh delivery unlocked'
+              : 'Add ${money(threshold - subtotal)} for free delivery',
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.ink))),
+          Text('${(progress * 100).round()}%',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900,
+              color: unlocked ? AppColors.green : AppColors.orange)),
+        ]),
+        const SizedBox(height: 9),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 6,
+            backgroundColor: Colors.white,
+            valueColor: AlwaysStoppedAnimation<Color>(unlocked ? AppColors.green : AppColors.orange),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _LiveBasketSummary extends StatelessWidget {
+  const _LiveBasketSummary({required this.state, required this.threshold});
+  final AppState state;
+  final int? threshold;
+
+  @override
+  Widget build(BuildContext context) {
+    final freeDelivery = threshold != null && threshold > 0 && state.cartSubtotal >= threshold;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: premiumCard(radius: 18),
+      child: Column(children: [
+        _BillRow(label: 'Items subtotal', value: money(state.cartSubtotal)),
+        _BillRow(
+          label: 'Farm delivery',
+          value: freeDelivery ? 'FREE' : 'Confirmed at checkout',
+          green: freeDelivery,
+        ),
+        const SizedBox(height: 8),
+        Container(height: 1, color: AppColors.line),
+        const SizedBox(height: 10),
+        Row(children: [
+          const Expanded(child: Text('Subtotal before delivery confirmation',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.ink))),
+          Text(money(state.cartSubtotal), style: displayStyle(size: 18)),
+        ]),
+        const SizedBox(height: 5),
+        const Align(alignment: Alignment.centerLeft, child: Text(
+          'The store confirms any delivery charges before your order is placed.',
+          style: TextStyle(fontSize: 10, height: 1.35, color: AppColors.muted),
+        )),
+      ]),
+    );
   }
 }
 
@@ -215,8 +340,10 @@ class _CartLineCard extends StatelessWidget {
               children: [
                 Text(
                   line.product.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w800,
                     color: AppColors.ink,
                   ),
@@ -224,7 +351,7 @@ class _CartLineCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   line.size.label,
-                  style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 10, color: AppColors.muted),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -238,7 +365,7 @@ class _CartLineCard extends StatelessWidget {
                     Text(
                       money(line.total),
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         fontWeight: FontWeight.w900,
                         color: AppColors.ink,
                       ),

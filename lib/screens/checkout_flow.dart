@@ -308,6 +308,9 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
 
   Widget _orderCard(AppState state, {required StoreConfig? config,
     required bool cod, required bool online, required String selectedPayment}) {
+    final hasOilOrGhee = state.cart.any((line) =>
+        line.product.groups.contains('Mustard Oil') || line.product.groups.contains('Desi Ghee'));
+    final qualityBadge = hasOilOrGhee ? 'Fresh pantry essentials' : '100% cold milled';
     return Container(
     padding: const EdgeInsets.all(16),
     decoration: premiumCard(radius: 22),
@@ -318,7 +321,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(color: const Color(0xFFEAF9F3), borderRadius: BorderRadius.circular(99)),
-          child: const Text('100% cold milled', style: TextStyle(
+          child: Text(qualityBadge, style: const TextStyle(
             color: AppColors.green, fontSize: 10, fontWeight: FontWeight.w800)),
         ),
       ]),
