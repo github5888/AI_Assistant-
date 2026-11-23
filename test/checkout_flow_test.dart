@@ -58,11 +58,14 @@ void main() {
     expect(find.text('Enter a valid 6-digit PIN code.'), findsOneWidget);
 
     final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(0), 'Saloni Gupta');
-    await tester.enterText(fields.at(1), '9876543210');
-    await tester.enterText(fields.at(2), '226010');
-    await tester.enterText(fields.at(3), 'Lucknow');
-    await tester.enterText(fields.at(4), '12, Gomti Nagar');
+    const values = ['Saloni Gupta', '9876543210', '226010', 'Lucknow', '12, Gomti Nagar'];
+    for (var index = 0; index < values.length; index++) {
+      final field = fields.at(index);
+      await tester.ensureVisible(field);
+      await tester.tap(field);
+      await tester.enterText(field, values[index]);
+      await tester.pump();
+    }
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('SAVE & DELIVER HERE'));
