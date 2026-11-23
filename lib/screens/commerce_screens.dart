@@ -28,9 +28,10 @@ class _CartScreenState extends State<CartScreen> {
 
     if (state.isLive && state.cart.isNotEmpty) {
       final threshold = state.storeConfig?.freeDeliveryThreshold;
-      return ListView(
+      return Column(children: [
+        Expanded(child: ListView(
         primary: false,
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 16),
         children: [
           _LiveBasketHeading(itemCount: state.cartCount),
           if (threshold != null && threshold > 0)
@@ -51,28 +52,35 @@ class _CartScreenState extends State<CartScreen> {
             },
           ),
           _LiveBasketSummary(state: state, threshold: threshold),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: PrimaryButton(
-              label: 'Continue to checkout',
-              icon: Icons.arrow_forward,
-              onTap: () => pushScreen(context, const CheckoutScreen()),
-            ),
+        ],
+      )),
+      Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        decoration: const BoxDecoration(
+          color: AppColors.cream,
+          border: Border(top: BorderSide(color: AppColors.line)),
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          PrimaryButton(
+            label: 'Continue to checkout',
+            icon: Icons.arrow_forward,
+            onTap: () => pushScreen(context, const CheckoutScreen()),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 7),
           const Wrap(
             alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 5,
             children: [
               Icon(Icons.lock_outline_rounded, size: 12, color: AppColors.muted),
-              Text('Secure checkout · final order total confirmed by the store',
+              Text('Secure checkout · total confirmed by the store',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 10, color: AppColors.muted)),
             ],
           ),
-        ],
-      );
+        ]),
+      ),
+      ]);
     }
 
     return state.cart.isEmpty
