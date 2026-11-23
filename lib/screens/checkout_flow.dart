@@ -89,7 +89,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
 
   Future<void> _continueOrder(AppState state, {required bool cod, required bool online}) async {
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_addressSaved && !(_formKey.currentState?.validate() ?? false)) return;
     if (!_addressSaved) setState(() => _addressSaved = true);
     if (state.customer == null) {
       await pushScreen(context, const SignInScreen());
