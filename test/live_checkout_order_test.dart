@@ -139,7 +139,7 @@ void main() {
     expect(submittedAddress['pincode'], '226010');
     expect(find.text('CLR-2026-1234'), findsOneWidget);
     expect(find.text('The store has confirmed your order.'), findsOneWidget);
-    await tester.ensureVisible(find.text('View my orders'));
+    await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
     await tester.pumpAndSettle();
     await tester.tap(find.text('View my orders'));
     await tester.pumpAndSettle();
