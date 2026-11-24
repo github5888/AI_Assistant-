@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:itsclear_app/app_state.dart';
 import 'package:itsclear_app/auth_platform.dart';
 import 'package:itsclear_app/main.dart';
+import 'package:itsclear_app/screens/checkout_flow.dart';
 import 'package:itsclear_app/store_api.dart';
 
 class _Vault implements SessionVault {
@@ -134,7 +135,7 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     final submit = find.text('Place order with cash on delivery');
-    await tester.scrollUntilVisible(submit, 280, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(submit, 280, scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     final appState = AppScope.of(tester.element(submit));
     expect(appState.customer?.id, 'customer-1');
     expect(appState.cartCount, 1);

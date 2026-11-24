@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:itsclear_app/main.dart';
+import 'package:itsclear_app/screens/checkout_flow.dart';
 import 'package:itsclear_app/store_api.dart';
 
 void main() {
@@ -48,7 +49,7 @@ void main() {
 
     expect(find.text('Delivery address'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('ORDER ITEMS'), 280,
-      scrollable: find.byType(Scrollable).first);
+      scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     expect(find.text('ORDER ITEMS'), findsOneWidget);
     expect(find.text('Cash on delivery'), findsOneWidget);
     expect(tester.widget<TextFormField>(find.byType(TextFormField).at(0)).enabled, isTrue);
@@ -77,7 +78,7 @@ void main() {
     expect(find.textContaining('Saloni Gupta · 9876543210'), findsOneWidget);
     // Order creation is server-authenticated; guests are prompted to sign in.
     await tester.scrollUntilVisible(find.text('Sign in to place order'), 280,
-      scrollable: find.byType(Scrollable).first);
+      scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton,
       'Sign in to place order')).onPressed, isNotNull);
     expect(tester.takeException(), isNull);
