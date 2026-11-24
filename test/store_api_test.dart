@@ -223,7 +223,7 @@ void main() {
     expect(find.text('Delivery address'), findsOneWidget);
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(find.text('Sign in to place order'), 300, scrollable: scrollable);
-    expect(find.text('Currently unavailable'), findsOneWidget);
+    expect(find.text('Currently unavailable'), findsNWidgets(3));
     final submit = find.widgetWithText(FilledButton, 'Sign in to place order');
     expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
     expect(tester.takeException(), isNull);
