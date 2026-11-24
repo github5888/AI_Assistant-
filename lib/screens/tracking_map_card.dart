@@ -43,21 +43,24 @@ class TrackingMapCard extends StatelessWidget {
         latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
     final rawStatus = (order['orderStatus'] is String ? order['orderStatus'] as String : 'confirmed')
         .toLowerCase();
-    final statusLabel = hasGps ? 'Live GPS active'
+    final statusLabel = hasGps ? 'GPS update received'
         : const {'confirmed', 'farm_queued', 'queued'}.contains(rawStatus)
             ? 'Dispatch queued' : 'Route preview';
     final destination = _destination();
+    final shippingAddress = _map(order['shippingAddress']);
+    final dropPin = _map(shippingAddress?['location']);
+    final dropLatitude = _coordinate(dropPin?['latitude'] ?? dropPin?['lat']);
+    final dropLongitude = _coordinate(dropPin?['longitude'] ?? dropPin?['lng'] ?? dropPin?['lon']);
+    final hasDropPin = dropLatitude != null && dropLongitude != null &&
+        dropLatitude >= -90 && dropLatitude <= 90 &&
+        dropLongitude >= -180 && dropLongitude <= 180;
+    final gpsUpdatedAt = location?['updatedAt'] ?? location?['timestamp'];
     final eta = order['estimatedDelivery'] is String &&
         (order['estimatedDelivery'] as String).trim().isNotEmpty
         ? (order['estimatedDelivery'] as String).trim() : 'Updates after dispatch';
     final distance = tracking['distanceKm'] ?? order['distanceKm'];
     final distanceLabel = distance is num && distance.isFinite && distance >= 0
         ? '${distance.toStringAsFixed(1)} km' : 'Store update pending';
-    final progressValue = tracking['progress'] ?? order['trackingProgress'];
-    final progress = progressValue is num && progressValue.isFinite
-        ? (progressValue > 1 ? progressValue / 100 : progressValue).clamp(0.0, 1.0).toDouble()
-        : null;
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -73,7 +76,7 @@ class TrackingMapCard extends StatelessWidget {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Delivery route', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
             const SizedBox(height: 2),
-            Text(hasGps ? 'Store location received' : 'Route overview from the store',
+            Text(hasGps ? 'Last location shared by partner' : 'Route overview · not live GPS',
               style: const TextStyle(fontSize: 11, color: AppColors.muted)),
           ])),
           Container(
@@ -97,7 +100,7 @@ class TrackingMapCard extends StatelessWidget {
             height: 214,
             child: Stack(children: [
               Positioned.fill(child: CustomPaint(
-                painter: _DeliveryRoutePainter(progress: progress, hasGps: hasGps),
+                painter: const _DeliveryRoutePainter(),
               )),
               Positioned(left: 10, top: 10, child: _MapLabel(
                 icon: Icons.storefront_rounded,
@@ -105,7 +108,7 @@ class TrackingMapCard extends StatelessWidget {
               )),
               Positioned(right: 10, top: 10, child: _MapLabel(
                 icon: Icons.location_on_rounded,
-                title: 'Delivery address',
+                title: hasDropPin ? 'Exact drop pin' : 'Delivery address',
                 subtitle: destination.isEmpty ? 'Address on your order' : _shortAddress(destination),
                 alignRight: true,
               )),
@@ -120,9 +123,11 @@ class TrackingMapCard extends StatelessWidget {
                   Text(eta, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                 ]),
               )),
-              if (destination.isNotEmpty)
+              if (destination.isNotEmpty || hasDropPin)
                 Positioned(right: 10, bottom: 10, child: FilledButton.tonalIcon(
-                  onPressed: () => _openMaps(context, destination),
+                  onPressed: () => _openMaps(context, destination,
+                    latitude: hasDropPin ? dropLatitude : null,
+                    longitude: hasDropPin ? dropLongitude : null),
                   icon: const Icon(Icons.near_me_outlined, size: 15),
                   label: const Text('Open Maps'),
                   style: FilledButton.styleFrom(
@@ -140,8 +145,26 @@ class TrackingMapCard extends StatelessWidget {
           const SizedBox(width: 5),
           Text(distanceLabel, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
         ]),
+        if (hasDropPin) ...[
+          const SizedBox(height: 4),
+          Text('Delivery pin · ${dropLatitude!.toStringAsFixed(6)}, ${dropLongitude!.toStringAsFixed(6)}'
+              '${dropPin?['accuracyMeters'] is num ? ' · ±${(dropPin?['accuracyMeters'] as num).round()} m' : ''}',
+            style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
+        ],
+        if (hasGps) ...[
+          const SizedBox(height: 7),
+          Text('Partner GPS · ${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}'
+              '${gpsUpdatedAt is String && gpsUpdatedAt.isNotEmpty ? ' · updated $gpsUpdatedAt' : ''}',
+            style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
+          Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+            onPressed: () => _openCoordinate(context, latitude!, longitude!),
+            icon: const Icon(Icons.my_location_rounded, size: 15),
+            label: const Text('Open partner pin in Maps'),
+          )),
+        ],
         const SizedBox(height: 4),
-        Text(hasGps ? 'Schematic route · location from store' : 'Schematic preview · live location after dispatch',
+        Text(hasGps ? 'Schematic route · GPS coordinates supplied by store'
+            : 'Schematic preview · waiting for a GPS update',
           style: const TextStyle(fontSize: 10, color: AppColors.muted)),
       ]),
     );
@@ -153,10 +176,33 @@ class TrackingMapCard extends StatelessWidget {
     return '${words[words.length - 2]}, ${words.last}';
   }
 
-  Future<void> _openMaps(BuildContext context, String destination) async {
+  Future<void> _openCoordinate(BuildContext context, double latitude, double longitude) async {
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
+    });
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not open Google Maps on this device.'),
+        ));
+      }
+    } catch (_) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Could not open Google Maps on this device.'),
+      ));
+    }
+  }
+
+  Future<void> _openMaps(BuildContext context, String destination, {
+    double? latitude, double? longitude,
+  }) async {
+    final exactDestination = latitude != null && longitude != null
+        ? '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}'
+        : destination;
     final uri = Uri.https('www.google.com', '/maps/dir/', {
       'api': '1',
-      'destination': destination,
+      'destination': exactDestination,
     });
     try {
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && context.mounted) {
@@ -200,9 +246,7 @@ class _MapLabel extends StatelessWidget {
 }
 
 class _DeliveryRoutePainter extends CustomPainter {
-  const _DeliveryRoutePainter({required this.progress, required this.hasGps});
-  final double? progress;
-  final bool hasGps;
+  const _DeliveryRoutePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -251,15 +295,6 @@ class _DeliveryRoutePainter extends CustomPainter {
 
     _drawPin(canvas, Offset(size.width * .17, size.height * .75), const Color(0xFF219A72), Icons.storefront_rounded);
     _drawPin(canvas, Offset(size.width * .84, size.height * .29), const Color(0xFFFFA51E), Icons.location_on_rounded);
-    if (hasGps && progress != null && metrics.isNotEmpty) {
-      final tangent = metrics.first.getTangentForOffset(metrics.first.length * progress!);
-      if (tangent != null) {
-        final point = tangent.position;
-        canvas.drawCircle(point, 14, Paint()..color = const Color(0x44219A72));
-        canvas.drawCircle(point, 8, Paint()..color = const Color(0xFF176D55));
-        canvas.drawCircle(point, 3, Paint()..color = Colors.white);
-      }
-    }
   }
 
   void _drawPin(Canvas canvas, Offset center, Color color, IconData icon) {
@@ -274,6 +309,5 @@ class _DeliveryRoutePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DeliveryRoutePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.hasGps != hasGps;
+  bool shouldRepaint(covariant _DeliveryRoutePainter oldDelegate) => false;
 }

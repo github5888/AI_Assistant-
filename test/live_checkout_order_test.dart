@@ -18,6 +18,22 @@ class _Vault implements SessionVault {
   Future<void> clear() async {}
 }
 
+class _SavedAddressVault implements AddressVault {
+  Map<String, Object?>? value = {
+    'name': 'Demo Buyer', 'fullName': 'Demo Buyer', 'phone': '9876543210',
+    'address': '12, Gomti Nagar', 'addressLine1': '12, Gomti Nagar',
+    'city': 'Lucknow', 'state': 'Uttar Pradesh', 'pincode': '226010',
+    'type': 'home',
+    'location': {'latitude': 26.8467, 'longitude': 80.9462, 'accuracyMeters': 8.0},
+  };
+  @override
+  Future<Map<String, Object?>?> read() async => value;
+  @override
+  Future<void> write(Map<String, Object?> address) async { value = address; }
+  @override
+  Future<void> clear() async { value = null; }
+}
+
 void main() {
   testWidgets('signed-in COD checkout posts to the store and shows its confirmed order', (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -58,8 +74,8 @@ void main() {
           return {
             'id': 'ord-live-test', 'orderNumber': 'CLR-2026-1234',
             'orderStatus': 'confirmed', 'paymentMethod': 'cod', 'paymentStatus': 'pending',
-            'total': 95, 'subtotal': 95, 'discount': 0, 'tax': 0, 'deliveryFee': 0,
-            'trackingStep': 1, 'estimatedDelivery': 'Within 2 Hours',
+'total': 95, 'subtotal': 95, 'discount': 0, 'tax': 0, 'deliveryFee': 0,
+            'trackingStep': 1, 'estimatedDelivery': 'Within 2 Hours (Express Fresh Chakki Delivery)',
             'items': [{'product': {'name': 'Khapli Atta'},
               'selectedVariant': {'size': '1 kg'}, 'quantity': 1, 'total': 95}],
             'shippingAddress': address,
@@ -82,7 +98,8 @@ void main() {
       return http.Response(jsonEncode(response), status);
     }));
 
-    await tester.pumpWidget(ItsClearApp(api: api, sessionVault: _Vault()));
+    await tester.pumpWidget(ItsClearApp(api: api, sessionVault: _Vault(),
+      addressVault: _SavedAddressVault()));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Shop'));
     await tester.pumpAndSettle();
@@ -99,11 +116,7 @@ void main() {
     final fields = find.byType(TextFormField);
     const values = ['Demo Buyer', '9876543210', '226010', 'Lucknow', '12, Gomti Nagar'];
     for (var index = 0; index < values.length; index++) {
-      final field = fields.at(index);
-      await tester.ensureVisible(field);
-      await tester.tap(field);
-      await tester.enterText(field, values[index]);
-      await tester.pump();
+      expect(tester.widget<TextFormField>(fields.at(index)).controller!.text, values[index]);
     }
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
@@ -147,8 +160,12 @@ void main() {
     expect(submittedAddress['name'], 'Demo Buyer');
     expect(submittedAddress['phone'], '9876543210');
     expect(submittedAddress['pincode'], '226010');
+    expect(submittedAddress['location'], {
+      'latitude': 26.8467, 'longitude': 80.9462, 'accuracyMeters': 8.0,
+    });
     expect(find.text('CLR-2026-1234'), findsOneWidget);
     expect(find.text('The store has confirmed your order.'), findsOneWidget);
+    expect(find.text('Within 2 Hours (Express Fresh Chakki Delivery)'), findsOneWidget);
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
     await tester.pumpAndSettle();
     await tester.tap(find.text('View my orders'));

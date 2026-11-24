@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../auth_models.dart';
@@ -47,6 +48,8 @@ class ProfileScreen extends StatelessWidget {
                 }
               }),
             ])),
+          if (state.savedShippingAddress != null)
+            _SavedDeliveryAddress(address: state.savedShippingAddress!, onRemove: state.clearSavedShippingAddress),
           SectionCard(child: InfoRow(
             icon: Icons.receipt_long,
             title: 'My orders & receipts',
@@ -189,6 +192,76 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _SavedDeliveryAddress extends StatelessWidget {
+  const _SavedDeliveryAddress({required this.address, required this.onRemove});
+  final Map<String, Object?> address;
+  final Future<void> Function() onRemove;
+
+  String _text(String key, [String? fallback]) {
+    final value = address[key] ?? (fallback == null ? null : address[fallback]);
+    return value is String ? value.trim() : '';
+  }
+
+  double? _coordinate(Object? value) => value is num && value.isFinite ? value.toDouble() : null;
+
+  @override
+  Widget build(BuildContext context) {
+    final location = address['location'];
+    final coords = location is Map ? location : const <Object?, Object?>{};
+    final latitude = _coordinate(coords['latitude']);
+    final longitude = _coordinate(coords['longitude']);
+    final lines = <String>[
+      _text('addressLine1', 'address'),
+      [_text('city'), _text('state'), _text('pincode', 'postalCode')]
+          .where((part) => part.isNotEmpty).join(', '),
+    ].where((part) => part.isNotEmpty).toList();
+    return SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Saved delivery address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+      const SizedBox(height: 5),
+      Text(lines.isEmpty ? 'Address saved on this device' : lines.join('\n'),
+        style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted)),
+      if (latitude != null && longitude != null) ...[
+        const SizedBox(height: 5),
+        Text('Exact pin · ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
+          style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
+      ],
+      const SizedBox(height: 6),
+      Wrap(spacing: 8, children: [
+        if (latitude != null && longitude != null)
+          TextButton.icon(
+            onPressed: () async {
+              final uri = Uri.https('www.google.com', '/maps/search/', {
+                'api': '1', 'query': '${latitude.toStringAsFixed(6)},${longitude.toStringAsFixed(6)}',
+              });
+              try {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (_) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Could not open Maps on this device.')),
+                );
+              }
+            },
+            icon: const Icon(Icons.map_outlined, size: 16),
+            label: const Text('Open pin in Maps'),
+          ),
+        TextButton.icon(
+          onPressed: () async {
+            try {
+              await onRemove();
+            } catch (_) {
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not remove the saved address.')),
+              );
+            }
+          },
+          icon: const Icon(Icons.delete_outline, size: 16),
+          label: const Text('Remove'),
+        ),
+      ]),
+    ]));
   }
 }
 

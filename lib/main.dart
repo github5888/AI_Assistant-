@@ -23,15 +23,17 @@ void main() {
     defaultValue: '859140870913-uu2j7n6cilpg9k4m7ec6aos2da6m542r.apps.googleusercontent.com');
   final api = StoreApi(base);
   runApp(ItsClearApp(api: api, sessionVault: AndroidSessionVault(api.base),
+    addressVault: AndroidAddressVault(api.base),
     googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId),
     paymentGateway: NativeRazorpayGateway()));
 }
 
 class ItsClearApp extends StatefulWidget {
-  const ItsClearApp({super.key, this.api, this.sessionVault, this.googleIdentity, this.paymentGateway});
+  const ItsClearApp({super.key, this.api, this.sessionVault, this.addressVault, this.googleIdentity, this.paymentGateway});
 
   final StoreApi? api;
   final SessionVault? sessionVault;
+  final AddressVault? addressVault;
   final GoogleIdentity? googleIdentity;
   final PaymentGateway? paymentGateway;
 
@@ -46,8 +48,10 @@ class _ItsClearAppState extends State<ItsClearApp> {
   void initState() {
     super.initState();
     _state = AppState(api: widget.api, sessionVault: widget.sessionVault,
+      addressVault: widget.addressVault,
       googleIdentity: widget.googleIdentity, paymentGateway: widget.paymentGateway);
     _state.restoreSession();
+    _state.restoreSavedAddress();
     _state.refreshStore();
   }
 

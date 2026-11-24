@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../data.dart';
 import '../theme.dart';
 import '../store_api.dart';
 import '../payment_models.dart';
+import '../device_location.dart';
 import '../widgets.dart';
 import 'sign_in_screen.dart';
 import 'order_confirmation_screen.dart';
@@ -35,6 +38,13 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   String _addressType = 'Home';
   String _paymentMethod = 'cod';
   bool _addressSaved = false;
+  bool _gettingLocation = false;
+  bool _didRestoreAddress = false;
+  double? _latitude;
+  double? _longitude;
+  double? _locationAccuracy;
+  String _stateName = 'Uttar Pradesh';
+  String? _locationError;
   String? _submitError;
 
   bool _didSetCustomerName = false;
@@ -54,7 +64,35 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       _name.text = customerName;
       _didSetCustomerName = true;
     }
+    final state = AppScope.of(context);
+    final saved = state.savedShippingAddress;
+    if (!_didRestoreAddress && saved != null) {
+      _didRestoreAddress = true;
+      _name.text = _savedText(saved, 'fullName', 'name');
+      _mobile.text = _savedText(saved, 'phone', 'mobile');
+      _street.text = _savedText(saved, 'addressLine1', 'address');
+      _city.text = _savedText(saved, 'city');
+      _pin.text = _savedText(saved, 'pincode', 'postalCode');
+      _stateName = _savedText(saved, 'state').isEmpty
+          ? 'Uttar Pradesh' : _savedText(saved, 'state');
+      _addressType = _savedText(saved, 'type').toLowerCase() == 'work' ? 'Work' : 'Home';
+      final location = saved['location'];
+      if (location is Map) {
+        _latitude = _number(location['latitude']);
+        _longitude = _number(location['longitude']);
+        _locationAccuracy = _number(location['accuracyMeters']);
+      }
+      _addressSaved = _name.text.isNotEmpty && _mobile.text.isNotEmpty &&
+          _street.text.isNotEmpty && _city.text.isNotEmpty && _pin.text.isNotEmpty;
+    }
   }
+
+  String _savedText(Map<String, Object?> saved, String key, [String? fallback]) {
+    final value = saved[key] ?? (fallback == null ? null : saved[fallback]);
+    return value is String ? value : '';
+  }
+
+  double? _number(Object? value) => value is num && value.isFinite ? value.toDouble() : null;
 
   @override
   void dispose() {
@@ -85,20 +123,88 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     return '';
   }
 
-  void _saveAddress() {
+  Map<String, Object?> _addressPayload() => {
+    'name': _name.text.trim(),
+    'fullName': _name.text.trim(),
+    'phone': _mobile.text.trim(),
+    'mobile': _mobile.text.trim(),
+    'address': _street.text.trim(),
+    'addressLine1': _street.text.trim(),
+    'street': _street.text.trim(),
+    'city': _city.text.trim(),
+    'state': _stateName,
+    'pincode': _pin.text.trim(),
+    'postalCode': _pin.text.trim(),
+    'country': 'India',
+    'type': _addressType.toLowerCase(),
+    if (_latitude != null && _longitude != null) 'location': {
+      'latitude': _latitude,
+      'longitude': _longitude,
+      if (_locationAccuracy != null) 'accuracyMeters': _locationAccuracy,
+    },
+  };
+
+  Future<void> _saveAddress() async {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() { _addressSaved = true; _submitError = null; });
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Delivery details are ready to review.'),
-      behavior: SnackBarBehavior.floating,
-    ));
+    try {
+      await AppScope.of(context).saveShippingAddress(_addressPayload());
+      if (!mounted) return;
+      setState(() { _addressSaved = true; _submitError = null; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Delivery address saved securely on this device.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (_) {
+      if (mounted) setState(() => _submitError = 'Could not save this address on your device. Try again.');
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    var coordinatesFound = false;
+    setState(() { _gettingLocation = true; _locationError = null; });
+    try {
+      final location = await DeliveryLocation.current();
+      if (!mounted) return;
+      coordinatesFound = true;
+      setState(() {
+        _latitude = location.latitude;
+        _longitude = location.longitude;
+        _locationAccuracy = location.accuracyMeters;
+        _street.text = location.street;
+        _city.text = location.city;
+        _stateName = location.state.isEmpty ? 'Uttar Pradesh' : location.state;
+        _pin.text = location.pincode;
+        _addressSaved = false;
+      });
+      await AppScope.of(context).saveShippingAddress(_addressPayload());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Current location saved. Review the address before placing your order.'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    } on DeliveryLocationException catch (error) {
+      if (mounted) setState(() => _locationError = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _locationError = coordinatesFound
+          ? 'Location was found but could not be saved securely. Try again.'
+          : 'Could not get your location. You can still enter the address manually.');
+    } finally {
+      if (mounted) setState(() => _gettingLocation = false);
+    }
   }
 
   Future<void> _continueOrder(AppState state, {required bool cod, required bool online}) async {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_addressSaved && !(_formKey.currentState?.validate() ?? false)) return;
     if (!_addressSaved) setState(() => _addressSaved = true);
+    try {
+      await state.saveShippingAddress(_addressPayload());
+    } catch (_) {
+      if (mounted) setState(() => _submitError = 'Could not save the latest delivery address on this device.');
+      return;
+    }
     if (state.customer == null) {
       await pushScreen(context, const SignInScreen());
       if (!mounted || state.customer == null) return;
@@ -121,21 +227,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     try {
       final order = await state.submitLiveOrder(
         paymentMethod: payment,
-        shippingAddress: {
-          'name': _name.text.trim(),
-          'fullName': _name.text.trim(),
-          'phone': _mobile.text.trim(),
-          'mobile': _mobile.text.trim(),
-          'address': _street.text.trim(),
-          'addressLine1': _street.text.trim(),
-          'street': _street.text.trim(),
-          'city': _city.text.trim(),
-          'state': 'Uttar Pradesh',
-          'pincode': _pin.text.trim(),
-          'postalCode': _pin.text.trim(),
-          'country': 'India',
-          'type': _addressType.toLowerCase(),
-        },
+        shippingAddress: _addressPayload(),
       );
       if (!mounted) return;
       await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
@@ -242,6 +334,26 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
               _streetField()]);
             return Column(children: [pair(name, mobile), pair(pin, city), _streetField()]);
           }),
+          OutlinedButton.icon(
+            onPressed: _gettingLocation ? null : _useCurrentLocation,
+            icon: _gettingLocation
+                ? const SizedBox.square(dimension: 17, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.my_location_rounded, size: 18),
+            label: Text(_gettingLocation ? 'Finding your location…' : 'Use my current location'),
+          ),
+          if (_gettingLocation) const LinearProgressIndicator(minHeight: 2),
+          if (_latitude != null && _longitude != null) ...[
+            const SizedBox(height: 5),
+            Text('Pin saved · ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}'
+                '${_locationAccuracy == null ? '' : ' · ±${_locationAccuracy!.round()} m'}',
+              style: const TextStyle(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w700)),
+            const Text('Stored on this device; shared with the store when you continue checkout. Verify the entrance and address.',
+              style: TextStyle(fontSize: 10, height: 1.35, color: AppColors.muted)),
+          ],
+          if (_locationError != null) ...[
+            const SizedBox(height: 5),
+            Text(_locationError!, style: const TextStyle(fontSize: 11, color: AppColors.orange)),
+          ],
           Padding(
             padding: const EdgeInsets.only(top: 2, bottom: 12),
             child: Wrap(crossAxisAlignment: WrapCrossAlignment.center,
@@ -306,7 +418,18 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       textCapitalization: textCapitalization,
       textInputAction: TextInputAction.next,
       validator: validator,
-      onChanged: (_) { if (_addressSaved) setState(() => _addressSaved = false); },
+      onChanged: (_) {
+        if (_addressSaved || _latitude != null) {
+          setState(() {
+            _addressSaved = false;
+            if (identical(controller, _street) || identical(controller, _city) || identical(controller, _pin)) {
+              _latitude = null;
+              _longitude = null;
+              _locationAccuracy = null;
+            }
+          });
+        }
+      },
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -751,12 +874,24 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   bool _busy = false;
   bool _refreshing = false;
   String? _error;
+  Timer? _trackingRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshOrder());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_refreshOrder());
+      _trackingRefreshTimer = Timer.periodic(
+        const Duration(seconds: 30), (_) => unawaited(_refreshOrder()),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _trackingRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _refreshOrder() async {
@@ -768,6 +903,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     try {
       final updated = await state.refreshCustomerOrder(id);
       if (mounted) setState(() => _order = updated);
+      final status = updated['orderStatus'];
+      if (status is String && const {'delivered', 'cancelled', 'returned'}.contains(status)) {
+        _trackingRefreshTimer?.cancel();
+      }
     } on StoreApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
@@ -800,6 +939,21 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       if (mounted) setState(() => _error = 'Return request could not be sent. Try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _callDriver(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone.replaceAll(RegExp(r'[^+0-9]'), ''));
+    try {
+      if (!await launchUrl(uri) && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not open the phone app.'),
+        ));
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Could not open the phone app.'),
+      ));
     }
   }
 
@@ -860,10 +1014,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           if (order['estimatedDelivery'] is String)
             Text(order['estimatedDelivery'] as String, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           if ((order['driverName'] is String && (order['driverName'] as String).isNotEmpty) ||
+              (order['driverPhone'] is String && (order['driverPhone'] as String).isNotEmpty) ||
               (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).isNotEmpty)) ...[
             const Divider(height: 20),
             if (order['driverName'] is String && (order['driverName'] as String).isNotEmpty)
               InfoRow(icon: Icons.person_outline, title: 'Delivery partner', trailing: order['driverName'] as String),
+            if (order['driverPhone'] is String && (order['driverPhone'] as String).isNotEmpty)
+              InfoRow(icon: Icons.call_outlined, title: 'Call delivery partner',
+                trailing: order['driverPhone'] as String,
+                onTap: () => _callDriver(order['driverPhone'] as String)),
             if (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).isNotEmpty)
               InfoRow(icon: Icons.electric_rickshaw, title: 'Vehicle', trailing: order['vehicleNumber'] as String),
           ],

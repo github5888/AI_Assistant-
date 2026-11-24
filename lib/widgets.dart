@@ -1321,11 +1321,13 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final trailingBelow = (trailing?.length ?? 0) > 20;
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 32,
@@ -1359,10 +1361,18 @@ class InfoRow extends StatelessWidget {
                         style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
                       ),
                     ),
+                  if (trailingBelow)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: Text(trailing!, maxLines: 3, softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 10, height: 1.3,
+                          fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    ),
                 ],
               ),
             ),
-            if (trailing != null)
+            if (trailing != null && !trailingBelow)
               Text(
                 trailing!,
                 style: const TextStyle(
@@ -1371,7 +1381,7 @@ class InfoRow extends StatelessWidget {
                   color: AppColors.ink,
                 ),
               )
-            else
+            else if (trailing == null)
               const Icon(Icons.chevron_right, size: 16, color: AppColors.muted),
           ],
         ),

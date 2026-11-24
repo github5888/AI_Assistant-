@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -7,6 +9,37 @@ abstract interface class SessionVault {
   Future<String?> read();
   Future<void> write(String token);
   Future<void> clear();
+}
+
+abstract interface class AddressVault {
+  Future<Map<String, Object?>?> read();
+  Future<void> write(Map<String, Object?> address);
+  Future<void> clear();
+}
+
+class AndroidAddressVault implements AddressVault {
+  AndroidAddressVault(Uri origin) : _key = 'itsclear.delivery-address.v1:${origin.origin}';
+  final String _key;
+  static const _storage = FlutterSecureStorage();
+
+  @override
+  Future<Map<String, Object?>?> read() async {
+    final raw = await _storage.read(key: _key);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? Map<String, Object?>.from(decoded) : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> write(Map<String, Object?> address) =>
+      _storage.write(key: _key, value: jsonEncode(address));
+
+  @override
+  Future<void> clear() => _storage.delete(key: _key);
 }
 
 class AndroidSessionVault implements SessionVault {

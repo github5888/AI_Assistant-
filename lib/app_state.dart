@@ -34,17 +34,47 @@ class Address {
 }
 
 class AppState extends ChangeNotifier {
-  AppState({this.api, this.sessionVault, this.googleIdentity, this.paymentGateway})
+  AppState({this.api, this.sessionVault, this.addressVault, this.googleIdentity, this.paymentGateway})
     : wishlist = api == null ? <String>{'khapli', 'protein'} : <String>{},
       orderIds = api == null ? <String>['IC40821', 'IC39744', 'IC38109'] : <String>[];
 
   final StoreApi? api;
   final SessionVault? sessionVault;
+  final AddressVault? addressVault;
   final GoogleIdentity? googleIdentity;
   final PaymentGateway? paymentGateway;
   CustomerSession? _session;
   CustomerAccount? get customer => _session?.account;
   bool restoringSession = false;
+  Map<String, Object?>? savedShippingAddress;
+  bool restoringAddress = false;
+
+  Future<void> restoreSavedAddress() async {
+    final vault = addressVault;
+    if (vault == null || restoringAddress || savedShippingAddress != null || _disposed) return;
+    restoringAddress = true;
+    try {
+      savedShippingAddress = await vault.read();
+    } catch (_) {
+      savedShippingAddress = null;
+    } finally {
+      restoringAddress = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> saveShippingAddress(Map<String, Object?> address) async {
+    final vault = addressVault;
+    if (vault != null) await vault.write(address);
+    savedShippingAddress = Map<String, Object?>.unmodifiable(address);
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> clearSavedShippingAddress() async {
+    await addressVault?.clear();
+    savedShippingAddress = null;
+    if (!_disposed) notifyListeners();
+  }
 
   Future<void> restoreSession() async {
     final service = api;
