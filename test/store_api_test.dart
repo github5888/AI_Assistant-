@@ -82,7 +82,7 @@ void main() {
           expect(request.url.queryParameters['productId'], 'itsclear-khapli-ancient');
           return jsonAnswer([
             {'productId': 'another', 'comment': 'Not for this product', 'rating': 5},
-            {'productId': 'db-1', 'comment': 'Fresh pack', 'rating': 5},
+            {'productId': 'db-1', 'comment': 'Fresh pack', 'rating': 4.8},
           ]);
         }(),
         _ => http.Response('Not found', 404),
@@ -98,7 +98,9 @@ void main() {
     expect(item.sizes.first.price, 95);
     expect(item.sizes.last.inStock, isFalse);
     expect((await api.product(item.id)).nutritionFacts['protein'], '14.5 g');
-    expect((await api.reviews(item)).single.body, 'Fresh pack');
+    final review = (await api.reviews(item)).single;
+    expect(review.body, 'Fresh pack');
+    expect(review.rating, 4.8);
     final config = await api.config();
     expect(config.codEnabled, isTrue);
     expect(config.onlinePaymentsEnabled, isFalse);

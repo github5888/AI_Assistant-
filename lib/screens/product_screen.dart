@@ -490,7 +490,8 @@ class _LiveDetailBody extends StatelessWidget {
           if (items.isEmpty) return const StoreNotice(message: 'No written reviews are available.');
           return SectionCard(child: Column(children: [
             for (final review in items.take(30))
-              InfoRow(icon: Icons.star_outline, title: review.body, trailing: '${review.rating}/5'),
+              InfoRow(icon: Icons.star_outline, title: review.body,
+                trailing: '${review.rating.toStringAsFixed(1)}/5'),
           ]));
         },
       );

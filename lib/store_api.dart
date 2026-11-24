@@ -358,9 +358,10 @@ class StoreApi {
       // Never show reviews for a different item if the endpoint ignores the filter.
       if (productId is! String || (productId != product.id && productId != product.databaseId)) continue;
       final body = _text(row['comment']);
-      final rating = _wholeNumber(row['rating']);
-      if (body.isEmpty || rating == null || rating < 1 || rating > 5) continue;
-      reviews.add(StoreReview(body, rating));
+      final rawRating = row['rating'];
+      if (body.isEmpty || rawRating is! num || !rawRating.isFinite ||
+          rawRating < 1 || rawRating > 5) continue;
+      reviews.add(StoreReview(body, rawRating.toDouble()));
     }
     return List.unmodifiable(reviews);
   }
@@ -482,7 +483,7 @@ class StoreConfig {
 class StoreReview {
   const StoreReview(this.body, this.rating);
   final String body;
-  final int rating;
+  final double rating;
 }
 
 class StoreApiException implements Exception {
