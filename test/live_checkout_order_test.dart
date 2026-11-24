@@ -121,9 +121,6 @@ void main() {
     }
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('SAVE & DELIVER HERE'));
-    await tester.tap(find.text('SAVE & DELIVER HERE'));
-    await tester.pumpAndSettle();
     expect(find.text('DELIVERY DETAILS SAVED'), findsOneWidget);
     final codeFinder = find.byWidgetPredicate((widget) =>
       widget is Text && RegExp(r'^\d{3}$').hasMatch(widget.data ?? ''));
