@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../app_state.dart';
 import '../device_location.dart';
@@ -133,6 +134,17 @@ class _DeliveryLocationSetupScreenState extends State<DeliveryLocationSetupScree
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: _locateAndOpenMap,
               icon: const Icon(Icons.refresh_rounded), label: const Text('TRY LOCATION AGAIN'),
+            )),
+            SizedBox(width: double.infinity, child: TextButton.icon(
+              onPressed: () async {
+                if (_error?.contains('app settings') == true) {
+                  await Geolocator.openAppSettings();
+                } else {
+                  await Geolocator.openLocationSettings();
+                }
+              },
+              icon: const Icon(Icons.settings_outlined, size: 16),
+              label: const Text('OPEN LOCATION SETTINGS'),
             )),
             SizedBox(width: double.infinity, child: TextButton(
               onPressed: () => pushScreen(context, const InAppCheckoutScreen()),

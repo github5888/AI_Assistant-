@@ -120,6 +120,8 @@ class PhoneShell extends StatelessWidget {
                 title: state.isLive && state.tab == 0 ? 'Delivering to'
                     : state.isLive && state.tab == 2 ? 'Your orders' : _titles[state.tab],
                 subtitle: subtitles[state.tab],
+                onTitleTap: state.isLive && state.tab == 0
+                    ? () => pushScreen(context, const DeliveryLocationSetupScreen()) : null,
                 showLogo: state.tab == 0,
                 actions: _actions(context, state),
               ),
@@ -174,14 +176,6 @@ class PhoneShell extends StatelessWidget {
     if (state.tab == 0) {
       return [
         if (state.isLive) ...[
-          Tooltip(
-            message: 'Set delivery location',
-            child: RoundIconButton(
-              icon: Icons.location_on_outlined,
-              onTap: () => pushScreen(context, const DeliveryLocationSetupScreen()),
-            ),
-          ),
-          const SizedBox(width: 4),
           Tooltip(
             message: 'Search products',
             child: RoundIconButton(

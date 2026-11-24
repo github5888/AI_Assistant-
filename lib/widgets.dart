@@ -53,6 +53,7 @@ class AppTopBar extends StatelessWidget {
   final String? subtitle;
   final bool showLogo;
   final bool back;
+  final VoidCallback? onTitleTap;
   final List<Widget> actions;
 
   const AppTopBar({
@@ -61,6 +62,7 @@ class AppTopBar extends StatelessWidget {
     this.subtitle,
     this.showLogo = false,
     this.back = false,
+    this.onTitleTap,
     this.actions = const <Widget>[],
   });
 
@@ -90,21 +92,27 @@ class AppTopBar extends StatelessWidget {
                 const SizedBox(width: 2),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                child: InkWell(
+                  onTap: onTitleTap,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                        color: AppColors.ink,
-                      ),
-                    ),
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Flexible(child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                          color: AppColors.ink,
+                        ),
+                      )),
+                      if (onTitleTap != null)
+                        const Icon(Icons.expand_more_rounded, size: 16, color: AppColors.muted),
+                    ]),
                     if (subtitle != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
@@ -116,6 +124,7 @@ class AppTopBar extends StatelessWidget {
                         ),
                       ),
                   ],
+                  ),
                 ),
               ),
               ...actions,
