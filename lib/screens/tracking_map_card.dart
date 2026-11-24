@@ -147,17 +147,17 @@ class TrackingMapCard extends StatelessWidget {
         ]),
         if (hasDropPin) ...[
           const SizedBox(height: 4),
-          Text('Delivery pin · ${dropLatitude!.toStringAsFixed(6)}, ${dropLongitude!.toStringAsFixed(6)}'
+          Text('Delivery pin · ${dropLatitude.toStringAsFixed(6)}, ${dropLongitude.toStringAsFixed(6)}'
               '${dropPin?['accuracyMeters'] is num ? ' · ±${(dropPin?['accuracyMeters'] as num).round()} m' : ''}',
             style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
         ],
         if (hasGps) ...[
           const SizedBox(height: 7),
-          Text('Partner GPS · ${latitude!.toStringAsFixed(6)}, ${longitude!.toStringAsFixed(6)}'
+          Text('Partner GPS · ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}'
               '${gpsUpdatedAt is String && gpsUpdatedAt.isNotEmpty ? ' · updated $gpsUpdatedAt' : ''}',
             style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
           Align(alignment: Alignment.centerLeft, child: TextButton.icon(
-            onPressed: () => _openCoordinate(context, latitude!, longitude!),
+            onPressed: () => _openCoordinate(context, latitude, longitude),
             icon: const Icon(Icons.my_location_rounded, size: 15),
             label: const Text('Open partner pin in Maps'),
           )),

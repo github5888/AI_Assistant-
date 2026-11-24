@@ -47,6 +47,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Delivery address'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('ORDER ITEMS'), 280,
+      scrollable: find.byType(Scrollable).last);
     expect(find.text('ORDER ITEMS'), findsOneWidget);
     expect(find.text('Cash on delivery'), findsOneWidget);
     expect(tester.widget<TextFormField>(find.byType(TextFormField).at(0)).enabled, isTrue);
@@ -74,6 +76,8 @@ void main() {
     expect(find.text('DELIVERY DETAILS SAVED'), findsOneWidget);
     expect(find.textContaining('Saloni Gupta · 9876543210'), findsOneWidget);
     // Order creation is server-authenticated; guests are prompted to sign in.
+    await tester.scrollUntilVisible(find.text('Sign in to place order'), 280,
+      scrollable: find.byType(Scrollable).last);
     expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton,
       'Sign in to place order')).onPressed, isNotNull);
     expect(tester.takeException(), isNull);
