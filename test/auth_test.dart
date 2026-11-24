@@ -150,7 +150,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(vault.value, 'fixture-store-session');
       expect(find.text('buyer@example.test'), findsOneWidget);
-      await tester.tap(find.text('Sign out'));
+      await tester.tap(find.byTooltip('Sign out'));
       await tester.pumpAndSettle();
       expect(vault.value, isNull);
       expect(find.text('Guest profile'), findsOneWidget);
