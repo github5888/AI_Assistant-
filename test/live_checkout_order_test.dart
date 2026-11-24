@@ -124,6 +124,8 @@ void main() {
     expect(find.text('DELIVERY DETAILS SAVED'), findsOneWidget);
     final codeFinder = find.byWidgetPredicate((widget) =>
       widget is Text && RegExp(r'^\d{3}$').hasMatch(widget.data ?? ''));
+    await tester.scrollUntilVisible(codeFinder, 280,
+      scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     final code = tester.widget<Text>(codeFinder).data!;
     final verificationField = find.byWidgetPredicate((widget) =>
       widget is TextField && widget.decoration?.hintText == '3 digits');
