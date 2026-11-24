@@ -106,7 +106,7 @@ jobs:
                       if ('overflowed by' in lowered or 'actually had no widget' in lowered or
                           line.strip().startswith(('Expected:', 'Exception:', 'Bad state:')) or
                           'The following assertion was thrown' in line):
-                          details = '\n'.join(lines[max(0, i - 1):i + 5])
+                          details = '\n'.join(lines[max(0, i - 15):i + 12])
                           print(f'::error title=Phone layout test::{escape(details)}')
                   elif 'error' in lowered or 'failed' in lowered:
                       print(f'::error title={name}::{escape(line)}')
