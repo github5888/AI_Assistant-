@@ -58,6 +58,10 @@ jobs:
           assert count == 1, 'Expected one applicationId in generated runner'
           generated.write_text(gradle)
           PY
+          # Keep the native reverse-geocoding MethodChannel in the generated runner.
+          mkdir -p /tmp/itsclear_runner/android/app/src/main/kotlin/com/itsclear/app
+          cp android/app/src/main/kotlin/com/itsclear/app/MainActivity.kt \
+            /tmp/itsclear_runner/android/app/src/main/kotlin/com/itsclear/app/MainActivity.kt
           cp -a /tmp/itsclear_runner/android/. android/
           cp -a /tmp/itsclear_runner/.metadata .metadata
 

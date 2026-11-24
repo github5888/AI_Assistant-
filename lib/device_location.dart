@@ -1,7 +1,9 @@
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
 class DeliveryLocation {
+  static const _geocoding = MethodChannel('com.itsclear.app/geocoding');
+
   const DeliveryLocation({
     required this.latitude,
     required this.longitude,
@@ -57,16 +59,21 @@ class DeliveryLocation {
     var state = '';
     var pincode = '';
     try {
-      final places = await placemarkFromCoordinates(position.latitude, position.longitude);
-      if (places.isNotEmpty) {
-        final place = places.first;
-        street = [place.subThoroughfare, place.thoroughfare, place.subLocality]
-            .whereType<String>().map((part) => part.trim())
-            .where((part) => part.isNotEmpty).toSet().join(', ');
-        city = (place.locality?.trim().isNotEmpty == true ? place.locality : place.subAdministrativeArea)?.trim() ?? '';
-        state = place.administrativeArea?.trim() ?? '';
-        pincode = place.postalCode?.trim() ?? '';
+      final place = await _geocoding.invokeMapMethod<String, Object?>(
+        'reverseGeocode', {'latitude': position.latitude, 'longitude': position.longitude},
+      );
+      String field(String key) {
+        final value = place?[key];
+        return value is String ? value : '';
       }
+      street = field('street');
+      city = field('city');
+      state = field('state');
+      pincode = field('pincode');
+    } on PlatformException {
+      // GPS coordinates are still useful if reverse geocoding is unavailable.
+    } on MissingPluginException {
+      // Tests and non-Android builds can still use the manually entered address.
     } catch (_) {
       // GPS coordinates are still useful if reverse geocoding is unavailable.
     }
