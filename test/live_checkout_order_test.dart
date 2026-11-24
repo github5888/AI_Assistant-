@@ -166,7 +166,7 @@ void main() {
     });
     expect(find.text('CLR-2026-1234'), findsOneWidget);
     expect(find.text('The store has confirmed your order.'), findsOneWidget);
-    expect(find.text('Within 2 Hours (Express Fresh Chakki Delivery)'), findsOneWidget);
+    expect(find.text('Within 2 Hours (Express Fresh Chakki Delivery)'), findsNWidgets(2));
     await tester.drag(find.byType(Scrollable).last, const Offset(0, -600));
     await tester.pumpAndSettle();
     await tester.tap(find.text('View my orders'));
