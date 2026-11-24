@@ -23,12 +23,14 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   SessionVault get _vault => widget.vault;
   final _email = TextEditingController();
   final _otp = TextEditingController();
+  final _password = TextEditingController();
   AdminSession? _session;
   OtpChallenge? _challenge;
   List<Map<String, dynamic>> _orders = const [];
   bool _restoring = true;
   bool _working = false;
   bool _loadingOrders = false;
+  bool _usePassword = true;
   String? _error;
 
   StoreApi get _api {
@@ -47,6 +49,7 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   void dispose() {
     _email.dispose();
     _otp.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -105,6 +108,27 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
       if (mounted) setState(() => _error = 'Admin sign-in could not be completed. Try again.');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _passwordSignIn() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() { _working = true; _error = null; });
+    try {
+      final session = await _api.adminPasswordLogin(_email.text, _password.text);
+      await _vault.write(session.token);
+      if (!mounted) return;
+      _password.clear();
+      setState(() => _session = session);
+      await _loadOrders();
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } on StoreApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Admin sign-in could not be completed. Check the credentials and try again.');
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -231,29 +255,49 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
       const Text('Sign in with an authorized admin email. The server verifies admin role before issuing access.',
         style: TextStyle(fontSize: 12, height: 1.45, color: AppColors.muted)),
       const SizedBox(height: 15),
-      TextField(controller: _email, enabled: !_working && _challenge == null,
+      TextField(controller: _email, enabled: !_working && (_usePassword || _challenge == null),
         keyboardType: TextInputType.emailAddress, textInputAction: TextInputAction.send,
         decoration: const InputDecoration(labelText: 'Admin email', prefixIcon: Icon(Icons.email_outlined)),
-        onSubmitted: (_) => _challenge == null ? _requestCode() : null),
-      if (_challenge != null) ...[
+        onSubmitted: (_) => _usePassword ? _passwordSignIn()
+            : _challenge == null ? _requestCode() : null),
+      if (_usePassword) ...[
+        const SizedBox(height: 10),
+        TextField(controller: _password, enabled: !_working, obscureText: true,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(labelText: 'Admin password', prefixIcon: Icon(Icons.lock_outline)),
+          onSubmitted: (_) => _passwordSignIn()),
+        Align(alignment: Alignment.centerLeft, child: TextButton(
+          onPressed: _working ? null : () => setState(() { _usePassword = false; _error = null; }),
+          child: const Text('Use email verification code instead')),
+        ),
+      ] else if (_challenge != null) ...[
         const SizedBox(height: 10),
         TextField(controller: _otp, enabled: !_working, keyboardType: TextInputType.number,
           maxLength: 6, textInputAction: TextInputAction.done,
           decoration: const InputDecoration(labelText: 'Six-digit email code', prefixIcon: Icon(Icons.password)),
           onSubmitted: (_) => _verifyCode()),
+        Wrap(spacing: 4, children: [
+          TextButton(onPressed: _working ? null : () => setState(() { _challenge = null; _otp.clear(); }),
+            child: const Text('Change email')),
+          TextButton(onPressed: _working ? null : () => setState(() { _usePassword = true; _challenge = null; _otp.clear(); }),
+            child: const Text('Use admin password')),
+        ]),
+      ] else
         Align(alignment: Alignment.centerLeft, child: TextButton(
-          onPressed: _working ? null : () => setState(() { _challenge = null; _otp.clear(); }),
-          child: const Text('Change email')),
+          onPressed: _working ? null : () => setState(() { _usePassword = true; _error = null; }),
+          child: const Text('Sign in with admin password instead')),
         ),
-      ],
       if (_error != null) Padding(padding: const EdgeInsets.only(top: 8),
         child: Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12))),
       const SizedBox(height: 8),
       SizedBox(width: double.infinity, child: FilledButton.icon(
-        onPressed: _working ? null : _challenge == null ? _requestCode : _verifyCode,
+        onPressed: _working ? null : _usePassword ? _passwordSignIn
+            : _challenge == null ? _requestCode : _verifyCode,
         icon: _working ? const SizedBox(width: 16, height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2)) : Icon(_challenge == null ? Icons.mark_email_read_outlined : Icons.login),
-        label: Text(_working ? 'Please wait…' : _challenge == null ? 'Send secure code' : 'Verify & sign in'),
+          child: CircularProgressIndicator(strokeWidth: 2))
+          : Icon(_usePassword ? Icons.login : _challenge == null ? Icons.mark_email_read_outlined : Icons.login),
+        label: Text(_working ? 'Please wait…' : _usePassword ? 'Admin sign in'
+            : _challenge == null ? 'Send secure code' : 'Verify & sign in'),
       )),
     ])),
   ]);

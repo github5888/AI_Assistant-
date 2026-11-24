@@ -142,6 +142,12 @@ class StoreApi {
     }),
   );
 
+  Future<AdminSession> adminPasswordLogin(String email, String password) async => AdminSession.fromJson(
+    await _auth(['admin-login'], payload: {
+      'email': email.trim().toLowerCase(), 'password': password,
+    }),
+  );
+
   Future<AdminSession> currentAdmin(String token) async {
     final result = await _auth(['me'], token: token);
     return AdminSession.fromJson({...result, 'token': token});

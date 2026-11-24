@@ -56,6 +56,10 @@ void main() {
           expect(body, {'email': 'ops@example.test', 'otp': '123456', 'portal': 'admin'});
           return jsonAnswer({'success': true, 'token': 'admin-session',
             'user': {'id': 'admin-1', 'email': 'ops@example.test', 'name': 'Operations', 'role': 'admin'}});
+        case '/api/auth/admin-login':
+          expect(body, {'email': 'ops@example.test', 'password': 'correct horse battery staple'});
+          return jsonAnswer({'token': 'admin-session',
+            'user': {'id': 'admin-1', 'email': 'ops@example.test', 'name': 'Operations', 'role': 'admin'}});
         case '/api/auth/me':
           expect(request.headers['authorization'], 'Bearer admin-session');
           return jsonAnswer({'user': {'id': 'admin-1', 'email': 'ops@example.test',
@@ -84,6 +88,7 @@ void main() {
     expect((await api.requestAdminLoginOtp(' OPS@example.test ')).resendAfter, 30);
     final session = await api.verifyAdminLoginOtp('ops@example.test', '123456');
     expect(session.id, 'admin-1');
+    expect((await api.adminPasswordLogin('ops@example.test', 'correct horse battery staple')).email, 'ops@example.test');
     expect((await api.currentAdmin(session.token)).email, 'ops@example.test');
     expect((await api.adminOrders(session.token)).single['id'], 'order-1');
     expect((await api.dispatchOrder('order-1', session.token, driverName: 'Real Partner',
