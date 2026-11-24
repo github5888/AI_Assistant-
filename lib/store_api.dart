@@ -132,6 +132,21 @@ class StoreApi {
     (await _auth(['me'], token: token))['user'],
   );
 
+  Future<OtpChallenge> requestAdminLoginOtp(String email) async => _challenge(await _auth(
+    ['login', 'send-otp'], payload: {'email': email.trim().toLowerCase()},
+  ));
+
+  Future<AdminSession> verifyAdminLoginOtp(String email, String otp) async => AdminSession.fromJson(
+    await _auth(['login', 'verify-otp'], payload: {
+      'email': email.trim().toLowerCase(), 'otp': otp.trim(), 'portal': 'admin',
+    }),
+  );
+
+  Future<AdminSession> currentAdmin(String token) async {
+    final result = await _auth(['me'], token: token);
+    return AdminSession.fromJson({...result, 'token': token});
+  }
+
   Future<List<Product>> products() async {
     final rows = await _get(['products']);
     if (rows is! List) throw const StoreApiException('Invalid product catalog.');
@@ -330,6 +345,34 @@ class StoreApi {
   Future<Map<String, dynamic>> customerOrder(String idOrNumber, String token) async {
     final result = await _orderRequest([idOrNumber], 'GET', token);
     if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid order.');
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
+  /// Admin-only routes. The server remains responsible for role enforcement.
+  Future<List<Map<String, dynamic>>> adminOrders(String token) async {
+    final result = await _orderRequest([], 'GET', token);
+    if (result is! List) throw const StoreApiException('The store returned an invalid order list.');
+    return List.unmodifiable(result.whereType<Map<String, dynamic>>()
+        .map((row) => Map<String, dynamic>.unmodifiable(row)));
+  }
+
+  Future<Map<String, dynamic>> dispatchOrder(String id, String token, {
+    required String driverName,
+    required String driverPhone,
+    required String vehicleNumber,
+    required String estimatedDelivery,
+  }) async {
+    final result = await _orderRequest([id, 'dispatch'], 'PATCH', token, payload: {
+      'driverName': driverName.trim(), 'driverPhone': driverPhone.trim(),
+      'vehicleNumber': vehicleNumber.trim(), 'estimatedDelivery': estimatedDelivery.trim(),
+    });
+    if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid dispatch update.');
+    return Map<String, dynamic>.unmodifiable(result);
+  }
+
+  Future<Map<String, dynamic>> updateAdminOrderStatus(String id, String token, String status) async {
+    final result = await _orderRequest([id, 'status'], 'PATCH', token, payload: {'status': status});
+    if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid status update.');
     return Map<String, dynamic>.unmodifiable(result);
   }
 

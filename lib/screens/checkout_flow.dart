@@ -1036,6 +1036,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final amount = order['total'];
     final total = amount is num ? money(amount.round()) : '—';
     final payment = order['paymentMethod'] is String ? order['paymentMethod'] as String : '—';
+    final fallbackPartner = order['driverName'] == 'Ramesh Kumar (EV Pilot)' &&
+        order['driverPhone'] == '+91 88581 80597' &&
+        order['vehicleNumber'] == 'UP-32-EV-4419';
+    final hasPartnerDetails = !fallbackPartner && (
+        (order['driverName'] is String && (order['driverName'] as String).trim().isNotEmpty) ||
+        (order['driverPhone'] is String && (order['driverPhone'] as String).trim().isNotEmpty) ||
+        (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).trim().isNotEmpty));
     final address = order['shippingAddress'];
     final addressText = address is Map ? [
       address['fullName'] ?? address['name'], address['addressLine1'] ?? address['address'],
@@ -1056,18 +1063,20 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           const SizedBox(height: 8),
           if (order['estimatedDelivery'] is String)
             Text(order['estimatedDelivery'] as String, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
-          if ((order['driverName'] is String && (order['driverName'] as String).isNotEmpty) ||
-              (order['driverPhone'] is String && (order['driverPhone'] as String).isNotEmpty) ||
-              (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).isNotEmpty)) ...[
+          if (hasPartnerDetails) ...[
             const Divider(height: 20),
-            if (order['driverName'] is String && (order['driverName'] as String).isNotEmpty)
+            if (order['driverName'] is String && (order['driverName'] as String).trim().isNotEmpty)
               InfoRow(icon: Icons.person_outline, title: 'Delivery partner', trailing: order['driverName'] as String),
-            if (order['driverPhone'] is String && (order['driverPhone'] as String).isNotEmpty)
+            if (order['driverPhone'] is String && (order['driverPhone'] as String).trim().isNotEmpty)
               InfoRow(icon: Icons.call_outlined, title: 'Call delivery partner',
                 trailing: order['driverPhone'] as String,
                 onTap: () => _callDriver(order['driverPhone'] as String)),
-            if (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).isNotEmpty)
+            if (order['vehicleNumber'] is String && (order['vehicleNumber'] as String).trim().isNotEmpty)
               InfoRow(icon: Icons.electric_rickshaw, title: 'Vehicle', trailing: order['vehicleNumber'] as String),
+          ] else if (fallbackPartner && rawStatus == 'out_for_delivery') ...[
+            const Divider(height: 20),
+            const InfoRow(icon: Icons.person_outline, title: 'Delivery partner',
+              trailing: 'Assignment details pending confirmation'),
           ],
           const SizedBox(height: 8),
           _TrackingProgress(status: rawStatus, step: order['trackingStep']),

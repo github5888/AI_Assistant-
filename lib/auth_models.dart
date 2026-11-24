@@ -39,6 +39,29 @@ class CustomerSession {
   }
 }
 
+class AdminSession {
+  const AdminSession({required this.id, required this.name, required this.email, required this.token});
+
+  final String id;
+  final String name;
+  final String email;
+  final String token;
+
+  factory AdminSession.fromJson(Map<String, dynamic> json) {
+    final token = json['token'];
+    final user = json['user'];
+    if (token is! String || token.isEmpty || RegExp(r'\s').hasMatch(token) ||
+        user is! Map || user['role'] != 'admin' || user['id'] is! String ||
+        (user['id'] as String).isEmpty || user['email'] is! String) {
+      throw const AuthException('This account is not authorized for the admin dispatch console.');
+    }
+    final name = user['name'];
+    return AdminSession(id: user['id'] as String,
+      name: name is String && name.trim().isNotEmpty ? name.trim() : 'itsclear admin',
+      email: user['email'] as String, token: token);
+  }
+}
+
 class GoogleExchange {
   const GoogleExchange.signedIn(this.session) : linkEmail = null;
   const GoogleExchange.needsLink(this.linkEmail) : session = null;

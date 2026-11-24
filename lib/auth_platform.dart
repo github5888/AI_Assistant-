@@ -55,6 +55,19 @@ class AndroidSessionVault implements SessionVault {
   Future<void> clear() => _storage.delete(key: _key);
 }
 
+class AndroidAdminSessionVault implements SessionVault {
+  AndroidAdminSessionVault(Uri origin) : _key = 'itsclear.admin-session.v1:${origin.origin}';
+  final String _key;
+  static const _storage = FlutterSecureStorage();
+
+  @override
+  Future<String?> read() => _storage.read(key: _key);
+  @override
+  Future<void> write(String token) => _storage.write(key: _key, value: token);
+  @override
+  Future<void> clear() => _storage.delete(key: _key);
+}
+
 abstract interface class GoogleIdentity {
   Future<String?> idToken();
   Future<void> signOut();

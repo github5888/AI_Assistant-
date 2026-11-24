@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:itsclear_app/app_state.dart';
+import 'package:itsclear_app/auth_models.dart';
 import 'package:itsclear_app/main.dart';
 import 'package:itsclear_app/data.dart';
 import 'package:itsclear_app/widgets.dart';
@@ -36,6 +37,63 @@ Map<String, Object> get configFixture => {
 };
 
 void main() {
+  test('admin session parsing rejects a customer token', () {
+    expect(() => AdminSession.fromJson({'token': 'customer-token', 'user': {
+      'id': 'customer-1', 'email': 'buyer@example.test', 'role': 'customer',
+    }}), throwsA(isA<AuthException>()));
+  });
+
+  test('admin dispatch uses the admin OTP portal and authenticated workflow APIs', () async {
+    final requests = <String>[];
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      final body = request.body.isEmpty ? null : jsonDecode(request.body);
+      requests.add('${request.method} ${request.url.path}');
+      switch (request.url.path) {
+        case '/api/auth/login/send-otp':
+          expect(body, {'email': 'ops@example.test'});
+          return jsonAnswer({'success': true, 'resendAfter': 30});
+        case '/api/auth/login/verify-otp':
+          expect(body, {'email': 'ops@example.test', 'otp': '123456', 'portal': 'admin'});
+          return jsonAnswer({'success': true, 'token': 'admin-session',
+            'user': {'id': 'admin-1', 'email': 'ops@example.test', 'name': 'Operations', 'role': 'admin'}});
+        case '/api/auth/me':
+          expect(request.headers['authorization'], 'Bearer admin-session');
+          return jsonAnswer({'user': {'id': 'admin-1', 'email': 'ops@example.test',
+            'name': 'Operations', 'role': 'admin'}});
+        case '/api/orders':
+          expect(request.headers['authorization'], 'Bearer admin-session');
+          expect(request.method, 'GET');
+          return jsonAnswer([{'id': 'order-1', 'orderStatus': 'quality_check'}]);
+        case '/api/orders/order-1/dispatch':
+          expect(request.method, 'PATCH');
+          expect(request.headers['authorization'], 'Bearer admin-session');
+          expect(body, {'driverName': 'Real Partner', 'driverPhone': '9876543210',
+            'vehicleNumber': 'UP32AB1234', 'estimatedDelivery': '45 minutes'});
+          return jsonAnswer({'id': 'order-1', 'orderStatus': 'out_for_delivery'});
+        case '/api/orders/order-1/status':
+          expect(request.method, 'PATCH');
+          expect(request.headers['authorization'], 'Bearer admin-session');
+          expect(body, {'status': 'delivered'});
+          return jsonAnswer({'id': 'order-1', 'orderStatus': 'delivered'});
+        default:
+          throw StateError('Unexpected route ${request.method} ${request.url.path}');
+      }
+    }));
+    addTearDown(api.close);
+
+    expect((await api.requestAdminLoginOtp(' OPS@example.test ')).resendAfter, 30);
+    final session = await api.verifyAdminLoginOtp('ops@example.test', '123456');
+    expect(session.id, 'admin-1');
+    expect((await api.currentAdmin(session.token)).email, 'ops@example.test');
+    expect((await api.adminOrders(session.token)).single['id'], 'order-1');
+    expect((await api.dispatchOrder('order-1', session.token, driverName: 'Real Partner',
+      driverPhone: '9876543210', vehicleNumber: 'UP32AB1234',
+      estimatedDelivery: '45 minutes'))['orderStatus'], 'out_for_delivery');
+    expect((await api.updateAdminOrderStatus('order-1', session.token, 'delivered'))['orderStatus'], 'delivered');
+    expect(requests, contains('PATCH /api/orders/order-1/dispatch'));
+    expect(requests, contains('PATCH /api/orders/order-1/status'));
+  });
+
   test('validates coupons from the public active-coupon list contract', () async {
     final api = StoreApi('https://example.test', client: MockClient((request) async {
       expect(request.method, 'GET');
