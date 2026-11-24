@@ -36,26 +36,36 @@ Map<String, Object> get configFixture => {
 };
 
 void main() {
-  test('validates a coupon through the live coupon API and returns server discount', () async {
+  test('validates coupons from the public active-coupon list contract', () async {
     final api = StoreApi('https://example.test', client: MockClient((request) async {
-      expect(request.method, 'POST');
-      expect(request.url.path, '/api/coupons/validate');
-      expect(request.headers['authorization'], 'Bearer customer-session');
-      final body = jsonDecode(request.body) as Map<String, dynamic>;
-      expect(body['code'], 'WELCOME20');
-      expect(body['subtotal'], 800);
-      expect(body['orderAmount'], 800);
-      return jsonAnswer({
-        'success': true,
-        'coupon': {'code': 'WELCOME20', 'discountAmount': 160},
-      });
+      expect(request.method, 'GET');
+      expect(request.url.path, '/api/coupons');
+      expect(request.headers['authorization'], isNull);
+      return jsonAnswer([
+        {'code': 'WELCOME20', 'active': true, 'discountType': 'percentage',
+          'discountValue': 20, 'minOrderValue': 500, 'usageLimit': 0, 'usedCount': 0},
+        {'code': 'OFF', 'active': false, 'discountType': 'flat', 'discountValue': 50},
+      ]);
     }));
     addTearDown(api.close);
-    final result = await api.validateCoupon(
-      token: 'customer-session', code: ' welcome20 ', subtotal: 800,
-    );
+    final result = await api.validateCoupon(code: ' welcome20 ', subtotal: 800);
     expect(result.code, 'WELCOME20');
     expect(result.discount, 160);
+    expect(result.freeShipping, isFalse);
+    await expectLater(api.validateCoupon(code: 'OFF', subtotal: 800),
+        throwsA(isA<StoreApiException>()));
+    await expectLater(api.validateCoupon(code: 'WELCOME20', subtotal: 400),
+        throwsA(isA<StoreApiException>().having((e) => e.message, 'message', contains('₹500'))));
+  });
+
+  test('supports free-shipping coupons from the active coupon list', () async {
+    final api = StoreApi('https://example.test', client: MockClient((request) async => jsonAnswer([
+      {'code': 'FREESHIP', 'active': true, 'discountType': 'flat', 'discountValue': 0},
+    ])));
+    addTearDown(api.close);
+    final result = await api.validateCoupon(code: 'FREESHIP', subtotal: 250);
+    expect(result.discount, 0);
+    expect(result.freeShipping, isTrue);
   });
 
   test('loads observed catalog, detail, config, health and scopes reviews', () async {

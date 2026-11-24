@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,7 +13,7 @@ import 'sign_in_screen.dart';
 import 'order_confirmation_screen.dart';
 import 'tracking_map_card.dart';
 
-/// Native, authenticated COD and UPI checkout backed by the live order API.
+/// Native, authenticated checkout backed by the live order and payment APIs.
 /// Order confirmation and payment state always come from the server.
 class InAppCheckoutScreen extends StatefulWidget {
   const InAppCheckoutScreen({super.key});
@@ -27,6 +29,9 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   final _pin = TextEditingController();
   final _city = TextEditingController();
   final _street = TextEditingController();
+  final _verification = TextEditingController();
+  final _random = math.Random.secure();
+  late String _verificationCode;
   String _addressType = 'Home';
   String _paymentMethod = 'cod';
   bool _addressSaved = false;
@@ -38,6 +43,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   void initState() {
     super.initState();
     _name = TextEditingController();
+    _verificationCode = (100 + _random.nextInt(900)).toString();
   }
 
   @override
@@ -52,7 +58,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_name, _mobile, _pin, _city, _street]) {
+    for (final controller in [_name, _mobile, _pin, _city, _street, _verification]) {
       controller.dispose();
     }
     super.dispose();
@@ -71,10 +77,11 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       ? null : 'Enter a valid 6-digit PIN code.';
 
   String _availablePayment({required bool cod, required bool online}) {
+    const onlineMethods = {'upi', 'card', 'netbanking'};
     if (_paymentMethod == 'cod' && cod) return 'cod';
-    if (_paymentMethod == 'online' && online) return 'online';
+    if (online && onlineMethods.contains(_paymentMethod)) return _paymentMethod;
     if (cod) return 'cod';
-    if (online) return 'online';
+    if (online) return 'upi';
     return '';
   }
 
@@ -102,14 +109,18 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       setState(() => _submitError = 'The store has no available payment method right now.');
       return;
     }
-    if (payment == 'online' && state.paymentGateway == null) {
+    if (payment != 'cod' && state.paymentGateway == null) {
       setState(() => _submitError = 'Secure online checkout is not available in this app build.');
+      return;
+    }
+    if (payment == 'cod' && _verification.text.trim() != _verificationCode) {
+      setState(() => _submitError = 'Enter the 3-digit verification code shown below.');
       return;
     }
     setState(() { _submitError = null; });
     try {
       final order = await state.submitLiveOrder(
-        paymentMethod: payment == 'cod' ? 'cod' : 'upi',
+        paymentMethod: payment,
         shippingAddress: {
           'name': _name.text.trim(),
           'fullName': _name.text.trim(),
@@ -335,15 +346,29 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
         _AmountRow(label: 'Items subtotal', amount: money(state.cartSubtotal)),
         const SizedBox(height: 7),
         _AmountRow(label: 'Delivery', amount: config == null
-          ? 'Confirming…'
-          : state.cartSubtotal >= config.freeDeliveryThreshold ? 'FREE'
-          : 'Confirmed at order submission', positive: state.cartSubtotal >= (config?.freeDeliveryThreshold ?? 1 << 30)),
+          ? 'Confirming…' : state.delivery == 0 ? 'FREE' : money(state.delivery),
+          positive: config != null && state.delivery == 0),
         if (state.couponApplied)
           _AmountRow(label: 'Coupon · ${state.appliedCouponCode ?? ''}',
-            amount: '-${money(state.couponDiscount)}', positive: true),
+            amount: state.appliedCouponFreeShipping ? 'FREE DELIVERY'
+                : '-${money(state.couponDiscount)}', positive: true),
+        if (state.coinsAvailable > 0) ...[
+          const Divider(height: 18),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            value: state.useGrainCoins,
+            onChanged: state.isSubmittingOrder ? null : state.setUseGrainCoins,
+            title: const Text('Use Grain Coins', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+            subtitle: Text('${state.coinsAvailable} available · use up to ${money(state.maxCoinsRedeemable)}',
+              style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+            secondary: const Icon(Icons.savings_outlined, color: AppColors.gold),
+          ),
+          if (state.coinsToRedeem > 0)
+            _AmountRow(label: 'Grain Coins', amount: '-${money(state.coinsToRedeem)}', positive: true),
+        ],
         const Divider(height: 20),
-        _AmountRow(label: 'Total before delivery confirmation',
-          amount: money(state.cartSubtotal - state.couponDiscount), prominent: true),
+        _AmountRow(label: 'Estimated total', amount: money(state.cartTotal), prominent: true),
       ],
       const SizedBox(height: 14),
       const Text('PAYMENT METHOD', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
@@ -358,8 +383,45 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
           onTap: cod ? () => setState(() => _paymentMethod = 'cod') : null),
         _PaymentOption(title: 'UPI · Razorpay', subtitle: online
             ? 'Pay securely in the app' : 'Currently unavailable',
-          selected: selectedPayment == 'online', enabled: online,
-          onTap: online ? () => setState(() => _paymentMethod = 'online') : null),
+          selected: selectedPayment == 'upi', enabled: online,
+          onTap: online ? () => setState(() => _paymentMethod = 'upi') : null),
+        _PaymentOption(title: 'Credit or debit card', subtitle: online
+            ? 'Secure card checkout by Razorpay' : 'Currently unavailable',
+          selected: selectedPayment == 'card', enabled: online,
+          onTap: online ? () => setState(() => _paymentMethod = 'card') : null),
+        _PaymentOption(title: 'Net banking', subtitle: online
+            ? 'Choose your bank in secure checkout' : 'Currently unavailable',
+          selected: selectedPayment == 'netbanking', enabled: online,
+          onTap: online ? () => setState(() => _paymentMethod = 'netbanking') : null),
+      ],
+      if (selectedPayment == 'cod') ...[
+        const SizedBox(height: 8),
+        const Text('QUICK VERIFICATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 6),
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(color: AppColors.paper,
+              borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.line)),
+            child: Text(_verificationCode, semanticsLabel: 'Verification code $_verificationCode',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 4)),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: TextField(
+            controller: _verification,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
+            decoration: const InputDecoration(labelText: 'Enter code', hintText: '3 digits', isDense: true),
+          )),
+          IconButton(
+            tooltip: 'Generate a new code',
+            onPressed: () => setState(() {
+              _verificationCode = (100 + _random.nextInt(900)).toString();
+              _verification.clear();
+            }),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ]),
       ],
       const SizedBox(height: 12),
       if (_submitError != null) ...[
@@ -379,8 +441,9 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
         label: Text(state.isSubmittingOrder ? 'Placing your order…'
             : state.orderStatusCheckRequired ? 'Check order history before retrying'
             : state.customer == null ? 'Sign in to place order'
-            : selectedPayment == 'online' ? 'Pay securely with UPI'
-            : 'Place order with cash on delivery'),
+            : selectedPayment == 'cod' ? 'Place order with cash on delivery'
+            : 'Pay securely with ${selectedPayment == 'upi' ? 'UPI'
+                : selectedPayment == 'card' ? 'card' : 'net banking'}'),
       )),
     ]),
   );

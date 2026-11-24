@@ -63,9 +63,23 @@ class ProfileScreen extends StatelessWidget {
           SectionCard(child: InfoRow(
             icon: Icons.favorite_border,
             title: 'Saved items',
-            subtitle: '${state.wishlist.length} flours',
+            subtitle: '${state.wishlist.length} products',
             onTap: () => pushScreen(context, const WishlistScreen()),
           )),
+          SectionCard(child: InfoRow(
+            icon: Icons.confirmation_number_outlined,
+            title: 'Offers & coupons',
+            subtitle: state.isLoadingCoupons ? 'Loading store offers…'
+                : state.couponListError ? 'Store offers unavailable'
+                : '${state.liveCoupons.length} active store offers',
+            onTap: () => pushScreen(context, const OffersScreen()),
+          )),
+          if (customer != null)
+            SectionCard(child: InfoRow(
+              icon: Icons.savings_outlined,
+              title: 'Grain Coins',
+              subtitle: '${customer.clearCoins} available',
+            )),
         ],
       );
     }
@@ -104,7 +118,12 @@ class ProfileScreen extends StatelessWidget {
               InfoRow(
                 icon: Icons.confirmation_number,
                 title: 'Offers & coupons',
-                subtitle: 'CLEAR50 · up to 25% off',
+                subtitle: state.isLive
+                    ? state.isLoadingCoupons ? 'Loading store offers…'
+                        : state.couponListError ? 'Store offers unavailable'
+                        : state.liveCoupons.isEmpty ? 'No active offers right now'
+                        : '${state.liveCoupons.length} active store offers'
+                    : 'CLEAR50 · up to 25% off',
                 onTap: () => pushScreen(context, const OffersScreen()),
               ),
               const Divider(height: 1, color: AppColors.line),

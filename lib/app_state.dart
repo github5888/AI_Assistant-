@@ -94,6 +94,7 @@ class AppState extends ChangeNotifier {
     if (_disposed) return;
     _session = null;
     _customerOrders = const [];
+    useGrainCoins = false;
     _clearLiveCoupon();
     orderStatusCheckRequired = false;
     customerOrdersError = null;
@@ -107,6 +108,9 @@ class AppState extends ChangeNotifier {
   bool catalogError = false;
   bool? storeOnline;
   StoreConfig? storeConfig;
+  List<StoreCoupon> liveCoupons = const [];
+  bool isLoadingCoupons = false;
+  bool couponListError = false;
   List<Product> _liveCatalog = const [];
   List<Product> get catalog => isLive ? _liveCatalog : products;
   List<Product> get featuredProducts {
@@ -120,7 +124,7 @@ class AppState extends ChangeNotifier {
     isLoadingCatalog = true;
     catalogError = false;
     notifyListeners();
-    await Future.wait([_loadCatalog(api!), _loadConfig(api!), _loadHealth(api!)]);
+    await Future.wait([_loadCatalog(api!), _loadConfig(api!), _loadHealth(api!), _loadCoupons(api!)]);
     if (_disposed) return;
     isLoadingCatalog = false;
     notifyListeners();
@@ -156,6 +160,20 @@ class AppState extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  Future<void> _loadCoupons(StoreApi service) async {
+    isLoadingCoupons = true;
+    try {
+      liveCoupons = await service.coupons();
+      couponListError = false;
+    } catch (_) {
+      liveCoupons = const [];
+      couponListError = true;
+    } finally {
+      isLoadingCoupons = false;
+    }
+    if (!_disposed) notifyListeners();
+  }
+
   @override
   void dispose() {
     _disposed = true;
@@ -187,7 +205,9 @@ class AppState extends ChangeNotifier {
   int paymentIndex = 0;
   bool couponApplied = false;
   String? appliedCouponCode;
+  bool appliedCouponFreeShipping = false;
   int _liveCouponDiscount = 0;
+  bool useGrainCoins = false;
   bool isApplyingCoupon = false;
   String? couponError;
   bool orderPlaced = false;
@@ -208,13 +228,31 @@ class AppState extends ChangeNotifier {
   int get cartSubtotal => cart.fold(0, (sum, line) => sum + line.total);
   int get cartMrp => cart.fold(0, (sum, line) => sum + line.mrpTotal);
   int get cartSavings => cartMrp - cartSubtotal;
-  int get delivery => cartSubtotal >= 499 || cart.isEmpty ? 0 : 49;
   int get couponDiscount => isLive
       ? (couponApplied ? _liveCouponDiscount : 0)
       : couponApplied ? 50 : 0;
+  int get coinsAvailable => isLive ? (customer?.clearCoins ?? 0) : 0;
+  int get maxCoinsRedeemable {
+    if (!isLive || coinsAvailable <= 0) return 0;
+    final afterCoupon = (cartSubtotal - couponDiscount).clamp(0, cartSubtotal);
+    return coinsAvailable < afterCoupon ~/ 2 ? coinsAvailable : afterCoupon ~/ 2;
+  }
+  int get coinsToRedeem => useGrainCoins ? maxCoinsRedeemable : 0;
+  int get delivery {
+    if (cart.isEmpty) return 0;
+    if (isLive && appliedCouponFreeShipping && couponApplied) return 0;
+    final afterDiscounts = cartSubtotal - couponDiscount - coinsToRedeem;
+    final threshold = isLive ? (storeConfig?.freeDeliveryThreshold ?? 499) : 499;
+    return afterDiscounts >= threshold ? 0 : 49;
+  }
   int get cartTotal {
-    final value = cartSubtotal + delivery - couponDiscount;
+    final value = cartSubtotal + delivery - couponDiscount - coinsToRedeem;
     return value < 0 ? 0 : value;
+  }
+
+  void setUseGrainCoins(bool enabled) {
+    useGrainCoins = enabled && isLive && coinsAvailable > 0;
+    notifyListeners();
   }
 
   int get calcMonthly => rotis * 30;
@@ -314,6 +352,7 @@ class AppState extends ChangeNotifier {
   void _clearLiveCoupon() {
     couponApplied = false;
     appliedCouponCode = null;
+    appliedCouponFreeShipping = false;
     _liveCouponDiscount = 0;
     couponError = null;
   }
@@ -362,6 +401,7 @@ class AppState extends ChangeNotifier {
     final ok = code.trim().toUpperCase() == 'CLEAR50';
     couponApplied = ok;
     appliedCouponCode = ok ? 'CLEAR50' : null;
+    appliedCouponFreeShipping = false;
     notifyListeners();
     return ok;
   }
@@ -387,7 +427,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     try {
       final result = await service.validateCoupon(
-        token: _session?.token,
         code: normalized,
         subtotal: validatedSubtotal,
       );
@@ -397,15 +436,14 @@ class AppState extends ChangeNotifier {
         return false;
       }
       appliedCouponCode = result.code;
+      appliedCouponFreeShipping = result.freeShipping;
       _liveCouponDiscount = result.discount.clamp(0, cartSubtotal).toInt();
-      couponApplied = _liveCouponDiscount > 0;
+      couponApplied = result.freeShipping || _liveCouponDiscount > 0;
       if (!couponApplied) couponError = 'This coupon does not apply to the current basket.';
       return couponApplied;
     } on StoreApiException catch (error) {
       if (!_disposed) {
-        couponApplied = false;
-        appliedCouponCode = null;
-        _liveCouponDiscount = 0;
+        _clearLiveCoupon();
         couponError = error.message;
       }
       return false;
@@ -425,7 +463,7 @@ class AppState extends ChangeNotifier {
     if (session == null) throw const StoreApiException('Sign in to place your order.', status: 401);
     if (isSubmittingOrder) throw const StoreApiException('Your order is already being submitted.');
     if (cart.isEmpty) throw const StoreApiException('Your basket is empty.');
-    if (!const {'cod', 'upi'}.contains(paymentMethod)) {
+    if (!const {'cod', 'upi', 'card', 'netbanking'}.contains(paymentMethod)) {
       throw const StoreApiException('Choose a supported payment method.');
     }
     if (paymentMethod != 'cod' && paymentGateway == null) {
@@ -437,18 +475,16 @@ class AppState extends ChangeNotifier {
       if (variantId == null || variantId.isEmpty) {
         throw const StoreApiException('A selected pack is missing its store variant. Please refresh the catalog.');
       }
-      // The store's order endpoint resolves product references against the
-      // database record, while `id` is the public catalog slug. Prefer the
-      // API's canonical database id when it is present.
-      final databaseId = line.product.databaseId?.trim();
+      // orderPricing.js resolves the public Product.id and variant.id from
+      // nested `product` and `selectedVariant` references (not Mongo _id).
       items.add({
-        'productId': databaseId == null || databaseId.isEmpty
-            ? line.product.id : databaseId,
-        'variantId': variantId,
+        'product': {'id': line.product.id},
+        'selectedVariant': {'id': variantId},
         'quantity': line.qty,
       });
     }
     final couponCode = couponApplied ? appliedCouponCode : null;
+    final requestedCoins = coinsToRedeem;
     isSubmittingOrder = true;
     customerOrdersError = null;
     var finalOrderRequestStarted = false;
@@ -463,11 +499,13 @@ class AppState extends ChangeNotifier {
           shippingAddress: shippingAddress,
           paymentMethod: paymentMethod,
           couponCode: couponCode,
+          coinsUsed: requestedCoins,
         );
         proof = await gateway.pay(
           order: paymentOrder,
           email: session.account.email,
           phone: shippingAddress['phone'] is String ? shippingAddress['phone'] as String : '',
+          paymentMethod: paymentMethod,
         );
       }
       finalOrderRequestStarted = true;
@@ -478,12 +516,24 @@ class AppState extends ChangeNotifier {
         paymentMethod: paymentMethod,
         paymentProof: proof,
         couponCode: couponCode,
+        coinsUsed: requestedCoins,
       );
       if (!_disposed && identical(_session, session)) {
         _customerOrders = List.unmodifiable([order, ..._customerOrders
             .where((existing) => existing['id'] != order['id'])]);
         cart.clear();
         _clearLiveCoupon();
+        useGrainCoins = false;
+        final used = order['coinsUsed'];
+        final earned = order['coinsEarned'];
+        if (used is num && earned is num && used.isFinite && earned.isFinite) {
+          final balance = (session.account.clearCoins - used.floor() + earned.floor())
+              .clamp(0, 1 << 31).toInt();
+          final account = session.account;
+          _session = CustomerSession(CustomerAccount(
+            id: account.id, email: account.email, name: account.name, clearCoins: balance,
+          ), session.token);
+        }
         orderStatusCheckRequired = false;
         notifyListeners();
       }

@@ -14,7 +14,7 @@ void main() {
       if (request.method == 'POST' && request.url.path == '/api/payments/create-order') {
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['items'], [
-          {'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2},
+          {'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2},
         ]);
         return http.Response(jsonEncode({
           'keyId': 'rzp_test_itsclear', 'providerOrderId': 'order_provider_1',
@@ -35,7 +35,7 @@ void main() {
         expect(body['deliverySlot'], '2-Hour Farm Express');
         expect(body['ecoPackaging'], isTrue);
         expect(body['items'], [
-          {'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2},
+          {'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2},
         ]);
         expect((body['shippingAddress'] as Map)['pincode'], '226010');
         return http.Response(jsonEncode({
@@ -72,7 +72,7 @@ void main() {
 
     final checkout = await api.createRazorpayOrder(
       token: 'signed-customer-session',
-      items: const [{'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2}],
+      items: const [{'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2}],
       shippingAddress: const {'name': 'Test Buyer', 'pincode': '226010'},
       paymentMethod: 'upi',
     );
@@ -82,7 +82,7 @@ void main() {
 
     final created = await api.createOrder(
       token: 'signed-customer-session',
-      items: const [{'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2}],
+      items: const [{'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2}],
       shippingAddress: const {
         'name': 'Test Buyer', 'phone': '9876543210', 'address': '12 Gomti Nagar',
         'city': 'Lucknow', 'state': 'Uttar Pradesh', 'pincode': '226010', 'country': 'India',
@@ -92,7 +92,7 @@ void main() {
     expect(created['orderNumber'], 'CLR-2026-1234');
     final paid = await api.createOrder(
       token: 'signed-customer-session',
-      items: const [{'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2}],
+      items: const [{'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2}],
       shippingAddress: const {'name': 'Test Buyer', 'pincode': '226010'},
       paymentMethod: 'upi',
       paymentProof: const RazorpayPaymentProof(
@@ -114,7 +114,7 @@ void main() {
     addTearDown(api.close);
     await expectLater(api.createOrder(
       token: 'signed-customer-session',
-      items: const [{'productId': 'khapli-family', 'variantId': 'kh-1kg', 'quantity': 2}],
+      items: const [{'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 2}],
       shippingAddress: const {},
       paymentMethod: 'cod',
     ), throwsA(isA<StoreApiException>()

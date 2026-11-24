@@ -9,6 +9,7 @@ abstract interface class PaymentGateway {
     required RazorpayOrder order,
     required String email,
     required String phone,
+    required String paymentMethod,
   });
   void dispose();
 }
@@ -27,8 +28,15 @@ class NativeRazorpayGateway implements PaymentGateway {
 
   @override
   Future<RazorpayPaymentProof> pay({required RazorpayOrder order,
-    required String email, required String phone}) {
+    required String email, required String phone, required String paymentMethod}) {
     if (_pending != null) throw const PaymentException('A payment is already open.');
+    final methodOption = switch (paymentMethod) {
+      'upi' => const {'upi': true},
+      'card' => const {'card': true},
+      'netbanking' => const {'netbanking': true},
+      _ => null,
+    };
+    if (methodOption == null) throw const PaymentException('Choose a supported online payment method.');
     final pending = Completer<RazorpayPaymentProof>();
     _pending = pending;
     try {
@@ -39,7 +47,7 @@ class NativeRazorpayGateway implements PaymentGateway {
         'currency': order.currency,
         'name': 'itsclear',
         'description': 'Fresh stoneground flour order',
-        'method': {'upi': true},
+        'method': methodOption,
         'prefill': {
           if (phone.trim().isNotEmpty) 'contact': phone.trim(),
           if (email.trim().isNotEmpty) 'email': email.trim(),
@@ -76,7 +84,7 @@ class NativeRazorpayGateway implements PaymentGateway {
       pending.completeError(const PaymentCancelledException());
     } else {
       pending.completeError(PaymentException(response.message?.trim().isNotEmpty == true
-          ? response.message!.trim() : 'Razorpay could not complete the payment. Try UPI again.'));
+          ? response.message!.trim() : 'Razorpay could not complete the payment. Please try again.'));
     }
   }
 

@@ -1,9 +1,11 @@
 class CustomerAccount {
-  const CustomerAccount({required this.id, required this.email, required this.name});
+  const CustomerAccount({required this.id, required this.email, required this.name,
+    this.clearCoins = 0});
 
   final String id;
   final String email;
   final String name;
+  final int clearCoins;
 
   factory CustomerAccount.fromJson(Object? json) {
     if (json is! Map || json['id'] is! String || json['email'] is! String ||
@@ -14,8 +16,12 @@ class CustomerAccount {
       throw const AuthException('Use a customer account to sign in to this app.');
     }
     final name = json['name'];
+    final rawCoins = json['clearCoins'];
+    final coins = rawCoins is num && rawCoins.isFinite && rawCoins >= 0
+        ? rawCoins.floor() : 0;
     return CustomerAccount(id: json['id'] as String, email: json['email'] as String,
-      name: name is String && name.trim().isNotEmpty ? name.trim() : 'itsclear customer');
+      name: name is String && name.trim().isNotEmpty ? name.trim() : 'itsclear customer',
+      clearCoins: coins);
   }
 }
 

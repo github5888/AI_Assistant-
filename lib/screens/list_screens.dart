@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../data.dart';
@@ -156,43 +157,71 @@ class OffersScreen extends StatelessWidget {
     return ListScaffold(
       title: 'Offers & coupons',
       subtitle: 'Harvest savings',
-      children: [
-        _OfferCard(
-          code: 'CLEAR50',
-          title: '₹50 off your next order',
-          body: 'Valid on all stoneground flours. Apply it in the basket before checkout.',
-          onApply: () {
-            state.applyCoupon('CLEAR50');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('CLEAR50 applied · ₹50 off'),
-                duration: Duration(milliseconds: 900),
+      children: state.isLive
+          ? [
+              if (state.isLoadingCoupons)
+                const Padding(padding: EdgeInsets.all(28),
+                  child: Center(child: CircularProgressIndicator()))
+              else if (state.couponListError)
+                StoreNotice(message: 'Store offers could not be loaded.',
+                  onRetry: state.isLoadingCatalog ? null : state.refreshStore)
+              else if (state.liveCoupons.isEmpty)
+                const Padding(padding: EdgeInsets.all(22),
+                  child: Center(child: Text('There are no active coupons from the store right now.',
+                    textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted))))
+              else
+                for (final coupon in state.liveCoupons)
+                  _OfferCard(
+                    code: coupon.code,
+                    title: coupon.description.isNotEmpty ? coupon.description
+                        : coupon.code == 'FREESHIP' ? 'Free delivery'
+                        : coupon.discountType == 'percentage'
+                            ? '${coupon.discountValue.toStringAsFixed(0)}% off'
+                            : '${money(coupon.discountValue.round())} off',
+                    body: coupon.minOrderValue > 0
+                        ? 'Minimum basket value ${money(coupon.minOrderValue)}. Final eligibility is checked when the order is placed.'
+                        : 'Enter this code in your basket. Final eligibility is checked when the order is placed.',
+                    onApply: () async {
+                      await Clipboard.setData(ClipboardData(text: coupon.code));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('${coupon.code} copied · apply it in your basket.'),
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    },
+                  ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: PrimaryButton(
+                  label: 'Browse products',
+                  icon: Icons.arrow_forward,
+                  onTap: () => state.goTab(1),
+                ),
               ),
-            );
-          },
-        ),
-        _OfferCard(
-          code: 'FREESHIP',
-          title: 'Free EV delivery above ₹499',
-          body: 'Automatically unlocked in the basket for eligible orders.',
-          onApply: () => state.goTab(3),
-        ),
-        _OfferCard(
-          code: 'FAMILY10',
-          title: 'Family sacks bundle value',
-          body: 'Save up to 17% on 5kg and 10kg carry-handle packs.',
-          onApply: () => state.goTab(1),
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: PrimaryButton(
-            label: 'Browse attas',
-            icon: Icons.arrow_forward,
-            onTap: () => state.goTab(1),
-          ),
-        ),
-      ],
+            ]
+          : [
+              _OfferCard(
+                code: 'CLEAR50',
+                title: '₹50 off your next order',
+                body: 'Sample offer for the offline preview only.',
+                onApply: () {
+                  state.applyCoupon('CLEAR50');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('CLEAR50 sample coupon applied.')),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: PrimaryButton(
+                  label: 'Browse products',
+                  icon: Icons.arrow_forward,
+                  onTap: () => state.goTab(1),
+                ),
+              ),
+            ],
     );
   }
 }

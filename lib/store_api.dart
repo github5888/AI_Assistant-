@@ -206,62 +206,65 @@ class StoreApi {
     return result;
   }
 
+  /// Public active coupon list; the backend has no /coupons/validate route.
+  Future<List<StoreCoupon>> coupons() async {
+    final rows = await _get(['coupons']);
+    if (rows is! List) throw const StoreApiException('The store returned an invalid coupon list.');
+    final now = DateTime.now().toUtc();
+    final result = <StoreCoupon>[];
+    for (final row in rows.whereType<Map<String, dynamic>>()) {
+      final code = _text(row['code']).toUpperCase();
+      final type = _text(row['discountType']);
+      final value = row['discountValue'];
+      if (code.isEmpty || row['active'] != true || !{'percentage', 'flat'}.contains(type) ||
+          value is! num || !value.isFinite || value < 0) continue;
+      final validFrom = DateTime.tryParse(_text(row['validFrom']));
+      final validUntil = DateTime.tryParse(_text(row['validUntil']));
+      final usageLimit = _wholeNumber(row['usageLimit']) ?? 0;
+      final usedCount = _wholeNumber(row['usedCount']) ?? 0;
+      if ((validFrom != null && now.isBefore(validFrom.toUtc())) ||
+          (validUntil != null && now.isAfter(validUntil.toUtc())) ||
+          (usageLimit > 0 && usedCount >= usageLimit)) continue;
+      result.add(StoreCoupon(
+        code: code,
+        description: _text(row['description']),
+        discountType: type,
+        discountValue: value.toDouble(),
+        minOrderValue: _wholeNumber(row['minOrderValue']) ?? 0,
+      ));
+    }
+    return List.unmodifiable(result);
+  }
+
+  /// Previews the public coupon data. The authenticated order endpoint
+  /// independently rechecks coupon existence, active status and minimum value.
   Future<CouponValidation> validateCoupon({
-    String? token,
     required String code,
     required int subtotal,
   }) async {
-    final request = http.Request('POST', base.replace(pathSegments: ['api', 'coupons', 'validate']))
-      ..followRedirects = false;
-    request.headers['Accept'] = 'application/json';
-    request.headers['Content-Type'] = 'application/json';
-    if (token != null && token.isNotEmpty) request.headers['Authorization'] = 'Bearer $token';
-    request.body = jsonEncode({
-      'code': code.trim().toUpperCase(),
-      'subtotal': subtotal,
-      'orderAmount': subtotal,
-    });
-    final http.Response response;
-    try {
-      response = await http.Response.fromStream(await _client.send(request))
-          .timeout(const Duration(seconds: 20));
-    } catch (_) {
-      throw const StoreApiException('Could not reach the store to validate this coupon.');
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty) throw const StoreApiException('Enter a coupon code.');
+    final active = await coupons();
+    StoreCoupon? coupon;
+    for (final candidate in active) {
+      if (candidate.code == normalized) {
+        coupon = candidate;
+        break;
+      }
     }
-    Map<String, dynamic> result = const {};
-    try {
-      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-      if (decoded is Map<String, dynamic>) result = decoded;
-    } on FormatException {
-      throw const StoreApiException('The store returned an invalid coupon response.');
+    if (coupon == null) throw const StoreApiException('This coupon is not active.');
+    if (subtotal < coupon.minOrderValue) {
+      throw StoreApiException('Add items worth ₹${coupon.minOrderValue} to use this coupon.');
     }
-    final data = result['data'] is Map<String, dynamic>
-        ? result['data'] as Map<String, dynamic> : result;
-    final coupon = data['coupon'] is Map<String, dynamic>
-        ? data['coupon'] as Map<String, dynamic> : data;
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final error = data['error'] ?? data['message'];
-      throw StoreApiException(error is String && error.trim().isNotEmpty
-          ? error.trim() : 'This coupon is not valid for the basket.', status: response.statusCode);
+
+    final freeShipping = normalized == 'FREESHIP';
+    final discount = freeShipping ? 0 : coupon.discountType == 'percentage'
+        ? (subtotal * coupon.discountValue / 100).round()
+        : coupon.discountValue.round().clamp(0, subtotal).toInt();
+    if (!freeShipping && discount == 0) {
+      throw const StoreApiException('This coupon does not discount the current basket.');
     }
-    final rawDiscount = coupon['discountAmount'] ?? coupon['discount'] ??
-        data['discountAmount'] ?? data['discount'] ?? data['amount'];
-    final discountValue = rawDiscount is Map
-        ? rawDiscount['amount'] ?? rawDiscount['value'] : rawDiscount;
-    final discount = _wholeNumber(discountValue);
-    final accepted = data['valid'] == true || data['success'] == true ||
-        data['isValid'] == true || (discount != null && discount > 0);
-    if (!accepted || discount == null || discount <= 0) {
-      final error = data['error'] ?? data['message'];
-      throw StoreApiException(error is String && error.trim().isNotEmpty
-          ? error.trim() : 'This coupon is not valid for the basket.');
-    }
-    final acceptedCode = _text(coupon['code'] ?? data['code']);
-    return CouponValidation(
-      code: acceptedCode.isEmpty ? code.trim().toUpperCase() : acceptedCode,
-      discount: discount,
-      message: _text(data['message']),
-    );
+    return CouponValidation(code: normalized, discount: discount, freeShipping: freeShipping);
   }
 
   Map<String, Object?> _orderQuotePayload({
@@ -269,12 +272,14 @@ class StoreApi {
     required Map<String, Object?> shippingAddress,
     required String paymentMethod,
     String? couponCode,
+    int coinsUsed = 0,
   }) => {
     'items': items,
     'shippingAddress': shippingAddress,
     'paymentMethod': paymentMethod,
     'deliverySlot': '2-Hour Farm Express',
     'ecoPackaging': true,
+    'coinsUsed': coinsUsed,
     if (couponCode != null && couponCode.trim().isNotEmpty)
       'couponCode': couponCode.trim().toUpperCase(),
   };
@@ -285,10 +290,11 @@ class StoreApi {
     required Map<String, Object?> shippingAddress,
     required String paymentMethod,
     String? couponCode,
+    int coinsUsed = 0,
   }) async {
     final payload = await _orderRequest(['create-order'], 'POST', token,
       payload: _orderQuotePayload(items: items, shippingAddress: shippingAddress,
-        paymentMethod: paymentMethod, couponCode: couponCode),
+        paymentMethod: paymentMethod, couponCode: couponCode, coinsUsed: coinsUsed),
       resource: 'payments');
     return RazorpayOrder.fromJson(payload);
   }
@@ -300,10 +306,11 @@ class StoreApi {
     required String paymentMethod,
     RazorpayPaymentProof? paymentProof,
     String? couponCode,
+    int coinsUsed = 0,
   }) async {
     final result = await _orderRequest([], 'POST', token, payload: {
       ..._orderQuotePayload(items: items, shippingAddress: shippingAddress,
-        paymentMethod: paymentMethod, couponCode: couponCode),
+        paymentMethod: paymentMethod, couponCode: couponCode, coinsUsed: coinsUsed),
       if (paymentProof != null) 'paymentProof': paymentProof.toJson(),
     });
     if (result is! Map<String, dynamic> || result['id'] is! String ||
@@ -445,11 +452,23 @@ class StoreApi {
       value >= 0 && value == value.roundToDouble() ? value.toInt() : null;
 }
 
+class StoreCoupon {
+  const StoreCoupon({required this.code, required this.description,
+    required this.discountType, required this.discountValue, required this.minOrderValue});
+  final String code;
+  final String description;
+  final String discountType;
+  final double discountValue;
+  final int minOrderValue;
+}
+
 class CouponValidation {
-  const CouponValidation({required this.code, required this.discount, this.message = ''});
+  const CouponValidation({required this.code, required this.discount,
+    this.message = '', this.freeShipping = false});
   final String code;
   final int discount;
   final String message;
+  final bool freeShipping;
 }
 
 class StoreConfig {

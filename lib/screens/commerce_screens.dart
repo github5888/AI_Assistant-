@@ -45,13 +45,15 @@ class _CartScreenState extends State<CartScreen> {
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(applied
-                    ? 'Coupon applied · ${money(state.couponDiscount)} off'
+                    ? state.appliedCouponFreeShipping
+                        ? 'Coupon applied · delivery is free'
+                        : 'Coupon applied · ${money(state.couponDiscount)} off'
                     : state.couponError ?? 'Coupon could not be applied.'),
                 behavior: SnackBarBehavior.floating,
               ));
             },
           ),
-          _LiveBasketSummary(state: state, threshold: threshold),
+          _LiveBasketSummary(state: state),
         ],
       )),
       Container(
@@ -207,13 +209,12 @@ class _LiveDeliveryProgress extends StatelessWidget {
 }
 
 class _LiveBasketSummary extends StatelessWidget {
-  const _LiveBasketSummary({required this.state, required this.threshold});
+  const _LiveBasketSummary({required this.state});
   final AppState state;
-  final int? threshold;
 
   @override
   Widget build(BuildContext context) {
-    final freeDelivery = (threshold ?? 0) > 0 && state.cartSubtotal >= (threshold ?? 0);
+    final freeDelivery = state.delivery == 0;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 2, 16, 0),
       padding: const EdgeInsets.all(16),
@@ -222,23 +223,26 @@ class _LiveBasketSummary extends StatelessWidget {
         _BillRow(label: 'Items subtotal', value: money(state.cartSubtotal)),
         _BillRow(
           label: 'Farm delivery',
-          value: freeDelivery ? 'FREE' : 'Confirmed at checkout',
+          value: freeDelivery ? 'FREE' : money(state.delivery),
           green: freeDelivery,
         ),
         if (state.couponApplied)
           _BillRow(label: 'Coupon ${state.appliedCouponCode ?? ''}',
-            value: '− ${money(state.couponDiscount)}', green: true),
+            value: state.appliedCouponFreeShipping ? 'Free delivery'
+                : '− ${money(state.couponDiscount)}', green: true),
+        if (state.coinsToRedeem > 0)
+          _BillRow(label: 'Grain Coins', value: '− ${money(state.coinsToRedeem)}', green: true),
         const SizedBox(height: 8),
         Container(height: 1, color: AppColors.line),
         const SizedBox(height: 10),
         Row(children: [
-          const Expanded(child: Text('Subtotal before delivery confirmation',
+          const Expanded(child: Text('Estimated total',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.ink))),
-          Text(money(state.cartSubtotal - state.couponDiscount), style: displayStyle(size: 18)),
+          Text(money(state.cartTotal), style: displayStyle(size: 18)),
         ]),
         const SizedBox(height: 5),
         const Align(alignment: Alignment.centerLeft, child: Text(
-          'The store confirms any delivery charges before your order is placed.',
+          'The store confirms the final amount when you place the order.',
           style: TextStyle(fontSize: 10, height: 1.35, color: AppColors.muted),
         )),
       ]),
@@ -557,7 +561,9 @@ class _LiveCouponEntry extends StatelessWidget {
       ]),
       if (state.couponApplied) Padding(
         padding: const EdgeInsets.only(left: 26, bottom: 4),
-        child: Text('${state.appliedCouponCode ?? ''} · ${money(state.couponDiscount)} saved',
+        child: Text(state.appliedCouponFreeShipping
+            ? '${state.appliedCouponCode ?? ''} · free delivery'
+            : '${state.appliedCouponCode ?? ''} · ${money(state.couponDiscount)} saved',
           style: const TextStyle(fontSize: 11, color: AppColors.green, fontWeight: FontWeight.w700)),
       ) else if (state.couponError != null) Padding(
         padding: const EdgeInsets.fromLTRB(26, 0, 8, 4),

@@ -24,8 +24,9 @@ class _Gateway implements PaymentGateway {
   RazorpayOrder? openedOrder;
   @override
   Future<RazorpayPaymentProof> pay({required RazorpayOrder order,
-    required String email, required String phone}) async {
+    required String email, required String phone, required String paymentMethod}) async {
     openedOrder = order;
+    expect(paymentMethod, 'upi');
     expect(email, 'buyer@example.test');
     expect(phone, '9876543210');
     return const RazorpayPaymentProof(razorpayOrderId: 'order_gateway_1',
@@ -39,21 +40,20 @@ void main() {
   test('live coupon validation follows basket changes and sends code to order API', () async {
     Map<String, dynamic>? submittedOrder;
     final api = StoreApi('https://coupons.example.test', client: MockClient((request) async {
-      expect(request.headers['authorization'], 'Bearer customer-session');
-      if (request.method == 'POST' && request.url.path == '/api/coupons/validate') {
-        final body = jsonDecode(request.body) as Map<String, dynamic>;
-        expect(body['code'], 'WELCOME20');
-        expect(body['subtotal'], anyOf(123, 246));
-        return http.Response(jsonEncode({
-          'success': true,
-          'coupon': {'code': 'WELCOME20', 'discountAmount': 40},
-        }), 200);
+      if (request.method == 'GET' && request.url.path == '/api/coupons') {
+        expect(request.headers['authorization'], isNull);
+        return http.Response(jsonEncode([
+          {'code': 'WELCOME20', 'active': true, 'discountType': 'percentage',
+            'discountValue': 20, 'minOrderValue': 100, 'usageLimit': 0, 'usedCount': 0},
+        ]), 200);
       }
       if (request.method == 'POST' && request.url.path == '/api/orders') {
+        expect(request.headers['authorization'], 'Bearer customer-session');
         submittedOrder = jsonDecode(request.body) as Map<String, dynamic>;
         return http.Response(jsonEncode({
           'id': 'order-coupon-1', 'orderNumber': 'CLR-COUPON-1',
           'orderStatus': 'confirmed', 'paymentMethod': 'cod',
+          'coinsUsed': 98, 'coinsEarned': 7,
         }), 201);
       }
       throw StateError('Unexpected request ${request.method} ${request.url}');
@@ -62,7 +62,7 @@ void main() {
     addTearDown(state.dispose);
     addTearDown(api.close);
     await state.acceptSession(const CustomerSession(
-      CustomerAccount(id: 'customer-1', email: 'buyer@example.test', name: 'Buyer'),
+      CustomerAccount(id: 'customer-1', email: 'buyer@example.test', name: 'Buyer', clearCoins: 100),
       'customer-session',
     ));
     const product = Product(id: 'khapli', databaseId: 'db-khapli',
@@ -71,17 +71,24 @@ void main() {
       sizes: [ProductSize('1 kg', 123, 123, id: 'variant-1')]);
     state.addToCart(product, product.sizes.single, 1);
     expect(await state.applyLiveCoupon(' welcome20 '), isTrue);
-    expect(state.couponDiscount, 40);
+    expect(state.couponDiscount, 25);
     state.setQty(state.cart.single.key, 2);
     expect(state.couponApplied, isFalse);
     expect(state.couponDiscount, 0);
     expect(await state.applyLiveCoupon('WELCOME20'), isTrue);
+    expect(state.couponDiscount, 49);
+    state.setUseGrainCoins(true);
+    expect(state.coinsToRedeem, 98);
     await state.submitLiveOrder(
       paymentMethod: 'cod',
       shippingAddress: const {'name': 'Buyer', 'phone': '9876543210', 'pincode': '226010'},
     );
     expect(submittedOrder?['couponCode'], 'WELCOME20');
-    expect((submittedOrder?['items'] as List).single['productId'], 'db-khapli');
+    final submittedItem = (submittedOrder?['items'] as List).single as Map<String, dynamic>;
+    expect(submittedItem['product'], {'id': 'khapli'});
+    expect(submittedItem['selectedVariant'], {'id': 'variant-1'});
+    expect(submittedOrder?['coinsUsed'], 98);
+    expect(state.customer?.clearCoins, 9);
     expect(state.cart, isEmpty);
     expect(state.couponApplied, isFalse);
   });
@@ -126,18 +133,20 @@ void main() {
         expect(request.method, 'POST');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['paymentMethod'], 'upi');
-        expect(body['items'], [{'productId': 'db-khapli', 'variantId': '1kg', 'quantity': 1}]);
+        expect(body['coinsUsed'], 20);
+        expect(body['items'], [{'product': {'id': 'khapli'}, 'selectedVariant': {'id': '1kg'}, 'quantity': 1}]);
         return http.Response(jsonEncode({
           'keyId': 'rzp_test_key', 'providerOrderId': 'order_gateway_1',
-          'amount': 12300, 'currency': 'INR',
-          'quote': {'subtotal': 123, 'discount': 0, 'deliveryFee': 0, 'tax': 0, 'total': 123},
+          'amount': 15200, 'currency': 'INR',
+          'quote': {'subtotal': 123, 'discount': 20, 'deliveryFee': 49, 'tax': 0, 'total': 152},
         }), 201);
       }
       if (request.url.path == '/api/orders') {
         expect(request.method, 'POST');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['paymentMethod'], 'upi');
-        expect(body['items'], [{'productId': 'db-khapli', 'variantId': '1kg', 'quantity': 1}]);
+        expect(body['coinsUsed'], 20);
+        expect(body['items'], [{'product': {'id': 'khapli'}, 'selectedVariant': {'id': '1kg'}, 'quantity': 1}]);
         expect(body['paymentProof'], {
           'razorpayOrderId': 'order_gateway_1',
           'razorpayPaymentId': 'pay_gateway_1',
@@ -148,7 +157,8 @@ void main() {
         final order = {
           'id': 'order-confirmed-1', 'orderNumber': 'CLR-2026-2021',
           'orderStatus': 'confirmed', 'paymentMethod': 'upi', 'paymentStatus': 'paid',
-          'subtotal': 123, 'deliveryFee': 0, 'discount': 0, 'tax': 0, 'total': 123,
+          'subtotal': 123, 'deliveryFee': 49, 'discount': 20, 'tax': 0, 'total': 152,
+          'coinsUsed': 20, 'coinsEarned': 7,
           'items': [], 'shippingAddress': address,
         };
         finalOrderCreated = true;
@@ -160,7 +170,7 @@ void main() {
     addTearDown(state.dispose);
     addTearDown(api.close);
     await state.acceptSession(const CustomerSession(
-      CustomerAccount(id: 'customer-1', email: 'buyer@example.test', name: 'Buyer'),
+      CustomerAccount(id: 'customer-1', email: 'buyer@example.test', name: 'Buyer', clearCoins: 20),
       'customer-session',
     ));
     const product = Product(id: 'khapli', databaseId: 'db-khapli',
@@ -168,6 +178,8 @@ void main() {
       rating: 0, reviews: 0, image: AppImages.khapli, tag: '', groups: [],
       sizes: [ProductSize('1 kg', 123, 123, id: '1kg')]);
     expect(state.addToCart(product, product.sizes.single, 1), isTrue);
+    state.setUseGrainCoins(true);
+    expect(state.coinsToRedeem, 20);
 
     final order = await state.submitLiveOrder(
       paymentMethod: 'upi',
@@ -176,6 +188,8 @@ void main() {
     expect(gateway.openedOrder?.providerOrderId, 'order_gateway_1');
     expect(finalOrderCreated, isTrue);
     expect(order['orderNumber'], 'CLR-2026-2021');
+    expect(order['total'], 152);
+    expect(state.customer?.clearCoins, 7);
     expect(state.cart, isEmpty);
     expect(state.customerOrders.single['paymentStatus'], 'paid');
   });

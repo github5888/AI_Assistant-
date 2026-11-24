@@ -111,6 +111,15 @@ void main() {
     await tester.tap(find.text('SAVE & DELIVER HERE'));
     await tester.pumpAndSettle();
     expect(find.text('DELIVERY DETAILS SAVED'), findsOneWidget);
+    final codeFinder = find.byWidgetPredicate((widget) =>
+      widget is Text && RegExp(r'^\d{3}$').hasMatch(widget.data ?? ''));
+    final code = tester.widget<Text>(codeFinder).data!;
+    final verificationField = find.byWidgetPredicate((widget) =>
+      widget is TextField && widget.decoration.hintText == '3 digits');
+    await tester.ensureVisible(verificationField);
+    await tester.enterText(verificationField, code);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     final submit = find.text('Place order with cash on delivery');
     final appState = AppScope.of(tester.element(submit));
     expect(appState.customer?.id, 'customer-1');
@@ -132,7 +141,7 @@ void main() {
     expect(submittedAuthorization, 'Bearer valid-customer-token');
     expect(submittedBody?['paymentMethod'], 'cod');
     expect(submittedBody?['items'], [
-      {'productId': 'db-khapli-family', 'variantId': 'kh-1kg', 'quantity': 1},
+      {'product': {'id': 'khapli-family'}, 'selectedVariant': {'id': 'kh-1kg'}, 'quantity': 1},
     ]);
     final submittedAddress = submittedBody?['shippingAddress'] as Map<String, dynamic>;
     expect(submittedAddress['name'], 'Demo Buyer');
