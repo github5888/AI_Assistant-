@@ -15,6 +15,7 @@ import 'screens/lab_screen.dart';
 import 'screens/list_screens.dart';
 import 'screens/profile_screen.dart';
 import 'screens/search_screen.dart';
+import 'screens/location_setup_screen.dart';
 import 'screens/shop_screen.dart';
 
 void main() {
@@ -90,8 +91,16 @@ class PhoneShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final savedAddress = state.savedShippingAddress;
+    final savedLocationLabel = savedAddress == null ? null : [
+      savedAddress['addressLine1'] ?? savedAddress['address'],
+      savedAddress['city'],
+      savedAddress['pincode'] ?? savedAddress['postalCode'],
+    ].whereType<String>().map((part) => part.trim())
+        .where((part) => part.isNotEmpty).join(', ');
     final subtitles = <String?>[
-      state.isLive ? null : 'Lucknow, Uttar Pradesh',
+      state.isLive ? (savedLocationLabel == null || savedLocationLabel.isEmpty
+          ? 'Choose your delivery location' : savedLocationLabel) : 'Lucknow, Uttar Pradesh',
       '${state.filteredProducts.length} stoneground flours',
       state.isLive ? 'Tracking & receipts' : 'Batch #IC-0426',
       '${state.cartCount} items',
@@ -108,7 +117,7 @@ class PhoneShell extends StatelessWidget {
           child: Column(
             children: [
               AppTopBar(
-                title: state.isLive && state.tab == 0 ? 'Online store'
+                title: state.isLive && state.tab == 0 ? 'Delivering to'
                     : state.isLive && state.tab == 2 ? 'Your orders' : _titles[state.tab],
                 subtitle: subtitles[state.tab],
                 showLogo: state.tab == 0,
@@ -165,6 +174,14 @@ class PhoneShell extends StatelessWidget {
     if (state.tab == 0) {
       return [
         if (state.isLive) ...[
+          Tooltip(
+            message: 'Set delivery location',
+            child: RoundIconButton(
+              icon: Icons.location_on_outlined,
+              onTap: () => pushScreen(context, const DeliveryLocationSetupScreen()),
+            ),
+          ),
+          const SizedBox(width: 4),
           Tooltip(
             message: 'Search products',
             child: RoundIconButton(

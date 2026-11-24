@@ -181,10 +181,11 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       });
       await AppScope.of(context).saveShippingAddress(_addressPayload());
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Current location saved. Review the address before placing your order.'),
-        behavior: SnackBarBehavior.floating,
-      ));
+      await _chooseMapPin(
+        startLatitude: location.latitude,
+        startLongitude: location.longitude,
+        startAccuracy: location.accuracyMeters,
+      );
     } on DeliveryLocationException catch (error) {
       if (mounted) setState(() => _locationError = error.message);
     } catch (_) {
@@ -196,12 +197,17 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     }
   }
 
-  Future<void> _chooseMapPin() async {
-    final latitude = _latitude;
-    final longitude = _longitude;
+  Future<void> _chooseMapPin({
+    double? startLatitude,
+    double? startLongitude,
+    double? startAccuracy,
+  }) async {
+    final latitude = startLatitude ?? _latitude;
+    final longitude = startLongitude ?? _longitude;
     if (latitude == null || longitude == null) return;
     final selected = await pushScreen<DeliveryPin>(context, LocationPickerScreen(
-      latitude: latitude, longitude: longitude, accuracyMeters: _locationAccuracy,
+      latitude: latitude, longitude: longitude,
+      accuracyMeters: startAccuracy ?? _locationAccuracy,
     ));
     if (selected == null || !mounted) return;
     setState(() { _gettingLocation = true; _locationError = null; });

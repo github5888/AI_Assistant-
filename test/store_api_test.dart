@@ -206,7 +206,8 @@ void main() {
     await tester.pumpWidget(ItsClearApp(api: api));
     await tester.pumpAndSettle();
 
-    expect(find.text('Online store'), findsOneWidget);
+    expect(find.text('Delivering to'), findsOneWidget);
+    expect(find.text('Choose your delivery location'), findsOneWidget);
     expect(find.text('Shop itsclear™'), findsNothing);
     expect(find.text('Zero-maida lab'), findsNothing);
     expect(find.text('Lab'), findsNothing);
