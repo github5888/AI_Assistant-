@@ -115,7 +115,7 @@ void main() {
       widget is Text && RegExp(r'^\d{3}$').hasMatch(widget.data ?? ''));
     final code = tester.widget<Text>(codeFinder).data!;
     final verificationField = find.byWidgetPredicate((widget) =>
-      widget is TextField && widget.decoration.hintText == '3 digits');
+      widget is TextField && widget.decoration?.hintText == '3 digits');
     await tester.ensureVisible(verificationField);
     await tester.enterText(verificationField, code);
     FocusManager.instance.primaryFocus?.unfocus();
