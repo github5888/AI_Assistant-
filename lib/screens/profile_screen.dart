@@ -246,6 +246,11 @@ class _SavedDeliveryAddress extends StatelessWidget {
       ],
       const SizedBox(height: 6),
       Wrap(spacing: 8, children: [
+        TextButton.icon(
+          onPressed: () => pushScreen(context, const CheckoutScreen()),
+          icon: const Icon(Icons.edit_location_alt_outlined, size: 16),
+          label: const Text('Edit address or pin'),
+        ),
         if (latitude != null && longitude != null)
           TextButton.icon(
             onPressed: () async {
