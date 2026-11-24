@@ -134,6 +134,7 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     final submit = find.text('Place order with cash on delivery');
+    await tester.scrollUntilVisible(submit, 280, scrollable: find.byType(Scrollable).first);
     final appState = AppScope.of(tester.element(submit));
     expect(appState.customer?.id, 'customer-1');
     expect(appState.cartCount, 1);
