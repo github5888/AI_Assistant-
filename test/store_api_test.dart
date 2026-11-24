@@ -250,6 +250,8 @@ void main() {
     expect(find.text('Receipts'), findsOneWidget);
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
+    expect(find.text('Store is connected'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
     expect(find.text('Send email OTP'), findsOneWidget);

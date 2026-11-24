@@ -15,6 +15,7 @@ import '../widgets.dart';
 import 'sign_in_screen.dart';
 import 'order_confirmation_screen.dart';
 import 'tracking_map_card.dart';
+import 'location_picker_screen.dart';
 
 /// Native, authenticated checkout backed by the live order and payment APIs.
 /// Order confirmation and payment state always come from the server.
@@ -195,6 +196,36 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     }
   }
 
+  Future<void> _chooseMapPin() async {
+    final latitude = _latitude;
+    final longitude = _longitude;
+    if (latitude == null || longitude == null) return;
+    final selected = await pushScreen<DeliveryPin>(context, LocationPickerScreen(
+      latitude: latitude, longitude: longitude, accuracyMeters: _locationAccuracy,
+    ));
+    if (selected == null || !mounted) return;
+    setState(() { _gettingLocation = true; _locationError = null; });
+    try {
+      final location = await DeliveryLocation.fromCoordinates(selected.latitude, selected.longitude);
+      if (!mounted) return;
+      setState(() {
+        _latitude = location.latitude;
+        _longitude = location.longitude;
+        _locationAccuracy = location.accuracyMeters;
+        if (location.street.isNotEmpty) _street.text = location.street;
+        if (location.city.isNotEmpty) _city.text = location.city;
+        if (location.state.isNotEmpty) _stateName = location.state;
+        if (location.pincode.isNotEmpty) _pin.text = location.pincode;
+        _addressSaved = false;
+      });
+      await AppScope.of(context).saveShippingAddress(_addressPayload());
+    } catch (_) {
+      if (mounted) setState(() => _locationError = 'Could not save the selected map pin. Please try again.');
+    } finally {
+      if (mounted) setState(() => _gettingLocation = false);
+    }
+  }
+
   Future<void> _continueOrder(AppState state, {required bool cod, required bool online}) async {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_addressSaved && !(_formKey.currentState?.validate() ?? false)) return;
@@ -341,6 +372,12 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
                 : const Icon(Icons.my_location_rounded, size: 18),
             label: Text(_gettingLocation ? 'Finding your location…' : 'Use my current location'),
           ),
+          if (_latitude != null && _longitude != null)
+            TextButton.icon(
+              onPressed: _gettingLocation ? null : _chooseMapPin,
+              icon: const Icon(Icons.map_outlined, size: 17),
+              label: const Text('Adjust exact pin on map'),
+            ),
           if (_gettingLocation) const LinearProgressIndicator(minHeight: 2),
           if (_latitude != null && _longitude != null) ...[
             const SizedBox(height: 5),

@@ -19,70 +19,86 @@ class ProfileScreen extends StatelessWidget {
 
     if (state.isLive) {
       final customer = state.customer;
+      final storeMessage = switch (state.storeOnline) {
+        true => 'Store is connected',
+        false => 'Store is temporarily unavailable',
+        null => 'Store status is not confirmed',
+      };
       return ListView(
         primary: false,
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
         children: [
-          SectionHeader(eyebrow: 'Your account', title: customer == null ? 'Guest profile' : 'Welcome back'),
           if (state.restoringSession)
-            const StoreNotice(message: 'Checking your saved session…')
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: StoreNotice(message: 'Checking your saved session…'))
           else if (customer == null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: PrimaryButton(
-                label: 'Sign in',
-                icon: Icons.login,
-                onTap: () => pushScreen(context, const SignInScreen()),
-              ),
-            )
-          else
             SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(customer.name, style: displayStyle(size: 23)),
-              const SizedBox(height: 5),
-              Text(customer.email, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-              TextButton.icon(icon: const Icon(Icons.logout), label: const Text('Sign out'), onPressed: () async {
-                try {
-                  await state.signOut();
-                } on AuthException catch (error) {
-                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
-                }
-              }),
-            ])),
+              Text('Your itsclear account', style: displayStyle(size: 21)),
+              const SizedBox(height: 6),
+              const Text('Sign in to see orders, saved addresses and Grain Coins.',
+                style: TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted)),
+              const SizedBox(height: 12),
+              PrimaryButton(label: 'Sign in', icon: Icons.login,
+                onTap: () => pushScreen(context, const SignInScreen())),
+            ]))
+          else
+            SectionCard(padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+              child: Row(children: [
+                CircleAvatar(radius: 25, backgroundColor: AppColors.navyDeep,
+                  child: Text(customer.name.trim().isEmpty ? '?' : customer.name.trim()[0].toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 18))),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(customer.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
+                  const SizedBox(height: 3),
+                  Text(customer.email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+                ])),
+                IconButton(
+                  tooltip: 'Sign out',
+                  onPressed: () async {
+                    try {
+                      await state.signOut();
+                    } on AuthException catch (error) {
+                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(error.message)));
+                    }
+                  },
+                  icon: const Icon(Icons.logout_rounded),
+                ),
+              ])),
+          Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 6), child: Row(children: [
+            Icon(state.storeOnline == true ? Icons.cloud_done_outlined : Icons.cloud_outlined,
+              size: 16, color: state.storeOnline == true ? AppColors.green : AppColors.muted),
+            const SizedBox(width: 7),
+            Expanded(child: Text(storeMessage,
+              style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600))),
+            if (state.storeOnline != true)
+              TextButton(onPressed: state.isLoadingCatalog ? null : state.refreshStore,
+                child: Text(state.isLoadingCatalog ? 'Checking…' : 'Retry')),
+          ])),
           if (state.savedShippingAddress != null)
             _SavedDeliveryAddress(address: state.savedShippingAddress!, onRemove: state.clearSavedShippingAddress),
-          SectionCard(child: InfoRow(
-            icon: Icons.receipt_long,
-            title: 'My orders & receipts',
-            onTap: () => state.goTab(2),
-          )),
-          StoreNotice(
-            message: switch (state.storeOnline) {
-              true => 'Live store is connected.',
-              false => 'The store is temporarily unavailable.',
-              null => 'Store status has not been confirmed.',
-            },
-            onRetry: state.isLoadingCatalog ? null : state.refreshStore,
-          ),
-          SectionCard(child: InfoRow(
-            icon: Icons.favorite_border,
-            title: 'Saved items',
-            subtitle: '${state.wishlist.length} products',
-            onTap: () => pushScreen(context, const WishlistScreen()),
-          )),
-          SectionCard(child: InfoRow(
-            icon: Icons.confirmation_number_outlined,
-            title: 'Offers & coupons',
-            subtitle: state.isLoadingCoupons ? 'Loading store offers…'
-                : state.couponListError ? 'Store offers unavailable'
-                : '${state.liveCoupons.length} active store offers',
-            onTap: () => pushScreen(context, const OffersScreen()),
-          )),
-          if (customer != null)
-            SectionCard(child: InfoRow(
-              icon: Icons.savings_outlined,
-              title: 'Grain Coins',
-              subtitle: '${customer.clearCoins} available',
-            )),
+          SectionCard(padding: const EdgeInsets.symmetric(vertical: 3), child: Column(children: [
+            InfoRow(icon: Icons.receipt_long, title: 'My orders & receipts',
+              subtitle: 'Track deliveries and view receipts', onTap: () => state.goTab(2)),
+            const Divider(height: 1, indent: 58, color: AppColors.line),
+            InfoRow(icon: Icons.favorite_border, title: 'Saved items',
+              subtitle: '${state.wishlist.length} products',
+              onTap: () => pushScreen(context, const WishlistScreen())),
+            const Divider(height: 1, indent: 58, color: AppColors.line),
+            InfoRow(icon: Icons.confirmation_number_outlined, title: 'Offers & coupons',
+              subtitle: state.isLoadingCoupons ? 'Loading store offers…'
+                  : state.couponListError ? 'Store offers unavailable'
+                  : '${state.liveCoupons.length} active store offers',
+              onTap: () => pushScreen(context, const OffersScreen())),
+            if (customer != null) ...[
+              const Divider(height: 1, indent: 58, color: AppColors.line),
+              InfoRow(icon: Icons.savings_outlined, title: 'Grain Coins',
+                subtitle: '${customer.clearCoins} available'),
+            ],
+          ])),
         ],
       );
     }

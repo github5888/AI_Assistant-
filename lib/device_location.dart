@@ -7,7 +7,7 @@ class DeliveryLocation {
   const DeliveryLocation({
     required this.latitude,
     required this.longitude,
-    required this.accuracyMeters,
+    this.accuracyMeters,
     this.street = '',
     this.city = '',
     this.state = '',
@@ -16,7 +16,7 @@ class DeliveryLocation {
 
   final double latitude;
   final double longitude;
-  final double accuracyMeters;
+  final double? accuracyMeters;
   final String street;
   final String city;
   final String state;
@@ -25,7 +25,7 @@ class DeliveryLocation {
   Map<String, Object?> toJson() => {
     'latitude': latitude,
     'longitude': longitude,
-    'accuracyMeters': accuracyMeters,
+    if (accuracyMeters != null) 'accuracyMeters': accuracyMeters,
   };
 
   static Future<DeliveryLocation> current() async {
@@ -54,13 +54,24 @@ class DeliveryLocation {
       ),
     );
 
+    return fromCoordinates(position.latitude, position.longitude,
+      accuracyMeters: position.accuracy);
+  }
+
+  static Future<DeliveryLocation> fromCoordinates(double latitude, double longitude, {
+    double? accuracyMeters,
+  }) async {
+    if (!latitude.isFinite || !longitude.isFinite || latitude < -90 || latitude > 90 ||
+        longitude < -180 || longitude > 180) {
+      throw const DeliveryLocationException('Choose a valid point on the map.');
+    }
     var street = '';
     var city = '';
     var state = '';
     var pincode = '';
     try {
       final place = await _geocoding.invokeMapMethod<String, Object?>(
-        'reverseGeocode', {'latitude': position.latitude, 'longitude': position.longitude},
+        'reverseGeocode', {'latitude': latitude, 'longitude': longitude},
       );
       String field(String key) {
         final value = place?[key];
@@ -71,22 +82,15 @@ class DeliveryLocation {
       state = field('state');
       pincode = field('pincode');
     } on PlatformException {
-      // GPS coordinates are still useful if reverse geocoding is unavailable.
+      // GPS coordinates remain valid if reverse geocoding is unavailable.
     } on MissingPluginException {
       // Tests and non-Android builds can still use the manually entered address.
     } catch (_) {
-      // GPS coordinates are still useful if reverse geocoding is unavailable.
+      // GPS coordinates remain valid if reverse geocoding is unavailable.
     }
 
-    return DeliveryLocation(
-      latitude: position.latitude,
-      longitude: position.longitude,
-      accuracyMeters: position.accuracy,
-      street: street,
-      city: city,
-      state: state,
-      pincode: pincode,
-    );
+    return DeliveryLocation(latitude: latitude, longitude: longitude,
+      accuracyMeters: accuracyMeters, street: street, city: city, state: state, pincode: pincode);
   }
 }
 
