@@ -153,7 +153,7 @@ void main() {
       await tester.tap(find.byTooltip('Sign out'));
       await tester.pumpAndSettle();
       expect(vault.value, isNull);
-      expect(find.text('Guest profile'), findsOneWidget);
+      expect(find.text('Your itsclear account'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
