@@ -9,6 +9,7 @@ import 'package:itsclear_app/auth_models.dart';
 import 'package:itsclear_app/auth_platform.dart';
 import 'package:itsclear_app/main.dart';
 import 'package:itsclear_app/store_api.dart';
+import 'package:itsclear_app/screens/sign_in_screen.dart';
 
 const fixtureUser = {'id': 'customer-1', 'email': 'buyer@example.test', 'name': 'Demo Buyer', 'role': 'customer'};
 const responseSession = {'success': true, 'user': fixtureUser, 'token': 'fixture-store-session'};
@@ -32,6 +33,23 @@ class _Google implements GoogleIdentity {
 }
 
 void main() {
+  testWidgets('customer sign-in shows a separate admin and staff entry', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 720);
+    addTearDown(tester.view.reset);
+    final api = StoreApi('https://example.test', client: MockClient((_) async => respond({})));
+    final state = AppState(api: api);
+    addTearDown(api.close);
+    addTearDown(state.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: AppScope(notifier: state, child: const SignInScreen()),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Admin / staff sign-in'), findsOneWidget);
+    expect(find.text('Sign in with password instead'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('customer auth uses documented JSON payloads and never follows redirects', () async {
     final api = StoreApi('https://example.test', client: MockClient((request) async {
       expect(request.followRedirects, isFalse);
