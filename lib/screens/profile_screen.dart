@@ -3,10 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app_state.dart';
 import '../auth_models.dart';
-import '../auth_platform.dart';
 import '../theme.dart';
 import '../widgets.dart';
-import 'admin_dispatch_screen.dart';
 import 'calculator_screen.dart';
 import 'sign_in_screen.dart';
 import 'commerce_screens.dart';
@@ -101,15 +99,6 @@ class ProfileScreen extends StatelessWidget {
                 subtitle: '${customer.clearCoins} available'),
             ],
           ])),
-          if (state.api != null)
-            SectionCard(padding: const EdgeInsets.all(0), child: InfoRow(
-              icon: Icons.local_shipping_outlined,
-              title: 'Dispatch console',
-              subtitle: 'Authorized admin sign-in · order workflow',
-              onTap: () => pushScreen(context, AdminDispatchScreen(
-                vault: AndroidAdminSessionVault(state.api!.base),
-              )),
-            )),
         ],
       );
     }

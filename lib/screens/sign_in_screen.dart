@@ -99,6 +99,12 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  void _openAdminConsole() {
+    final api = AppScope.of(context).api;
+    if (api == null) return;
+    pushScreen(context, AdminDispatchScreen(vault: AndroidAdminSessionVault(api.base)));
+  }
+
   Future<void> _finish(AppState state, CustomerSession session) async {
     if (!mounted) return;
     await state.acceptSession(session);
@@ -194,7 +200,12 @@ class _SignInScreenState extends State<SignInScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(gradient: AppGradients.navy, borderRadius: BorderRadius.circular(24)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('itsclear.', style: TextStyle(color: AppColors.amber, fontSize: 20, fontWeight: FontWeight.w900)),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onLongPress: state.api == null ? null : _openAdminConsole,
+                child: const Text('itsclear.',
+                  style: TextStyle(color: AppColors.amber, fontSize: 20, fontWeight: FontWeight.w900)),
+              ),
               const SizedBox(height: 12),
               Text(linking ? 'Link your Google account' : registering ? 'Join itsclear' : 'Welcome to itsclear',
                 style: const TextStyle(color: Colors.white, fontSize: 26, height: 1.13, fontWeight: FontWeight.w800)),
@@ -280,17 +291,6 @@ class _SignInScreenState extends State<SignInScreen> {
           ] else
             TextButton(onPressed: _busy ? null : () => _changeMode(_AuthMode.email),
               child: Text(_mode == _AuthMode.email ? 'Change email address' : 'Back to email sign-in')),
-          if (state.api != null) ...[
-            const SizedBox(height: 8),
-            const Divider(),
-            TextButton.icon(
-              onPressed: _busy ? null : () => pushScreen(context, AdminDispatchScreen(
-                vault: AndroidAdminSessionVault(state.api!.base),
-              )),
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              label: const Text('Admin / staff sign-in'),
-            ),
-          ],
         ],
       )),
     ]));

@@ -13,7 +13,7 @@ class CustomerAccount {
       throw const AuthException('The store returned an invalid account.');
     }
     if (json['role'] != 'customer') {
-      throw const AuthException('This is not a customer account. Use Admin / staff sign-in to open the dispatch console.');
+      throw const AuthException('This account cannot be used for customer sign-in. Check the account details and try again.');
     }
     final name = json['name'];
     final rawCoins = json['clearCoins'];

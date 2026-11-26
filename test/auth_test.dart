@@ -33,7 +33,7 @@ class _Google implements GoogleIdentity {
 }
 
 void main() {
-  testWidgets('customer sign-in shows a separate admin and staff entry', (tester) async {
+  testWidgets('customer sign-in does not visibly expose the admin portal', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 720);
     addTearDown(tester.view.reset);
@@ -45,7 +45,8 @@ void main() {
       home: AppScope(notifier: state, child: const SignInScreen()),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Admin / staff sign-in'), findsOneWidget);
+    expect(find.text('Admin / staff sign-in'), findsNothing);
+    expect(find.text('Dispatch console'), findsNothing);
     expect(find.text('Sign in with password instead'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
