@@ -346,11 +346,14 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     final fallbackPartner = _hasFallbackPartner(order);
     return Padding(padding: const EdgeInsets.only(bottom: 5), child: SectionCard(child: Column(
       crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.receipt_long_outlined, color: AppColors.green, size: 19),
-          const SizedBox(width: 7),
-          Expanded(child: Text(orderNumber, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14))),
-          _StatusPill(status: status.replaceAll('_', ' ')),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.receipt_long_outlined, color: AppColors.green, size: 19),
+            const SizedBox(width: 7),
+            Expanded(child: Text(orderNumber, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14))),
+          ]),
+          Padding(padding: const EdgeInsets.only(left: 26, top: 5),
+            child: _StatusPill(status: status.replaceAll('_', ' '))),
         ]),
         const Divider(height: 18),
         Text(customer, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
