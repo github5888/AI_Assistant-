@@ -366,29 +366,29 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           child: Text('Landmark: $landmark',
             style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted))),
         if (pin != null) Padding(padding: const EdgeInsets.only(top: 2),
-          child: Row(children: [
-            Expanded(child: Text('Saved pin · ${pin.$1.toStringAsFixed(6)}, ${pin.$2.toStringAsFixed(6)}',
-              style: const TextStyle(fontSize: 12, color: AppColors.muted))),
-            TextButton.icon(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Saved pin · ${pin.$1.toStringAsFixed(6)}, ${pin.$2.toStringAsFixed(6)}',
+              style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            Align(alignment: Alignment.centerLeft, child: TextButton.icon(
               onPressed: () => _openDeliveryMap(pin.$1, pin.$2),
               icon: const Icon(Icons.map_outlined, size: 18),
               label: const Text('Open map'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
                 textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
+            )),
           ])),
         if (pin == null && addressMapQuery.isNotEmpty) Padding(
           padding: const EdgeInsets.only(top: 2),
-          child: Row(children: [
-            const Expanded(child: Text('No saved pin · address search',
-              style: TextStyle(fontSize: 12, color: AppColors.muted))),
-            TextButton.icon(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('No saved pin · address search',
+              style: TextStyle(fontSize: 12, color: AppColors.muted)),
+            Align(alignment: Alignment.centerLeft, child: TextButton.icon(
               onPressed: () => _openAddressMap(addressMapQuery),
               icon: const Icon(Icons.map_outlined, size: 18),
               label: const Text('Open map'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
                 textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-            ),
+            )),
           ])),
         if (addressText.isEmpty && landmark.isEmpty && pin == null)
           const Padding(padding: EdgeInsets.only(top: 4),
