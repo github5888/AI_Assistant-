@@ -107,12 +107,6 @@ class _SignInScreenState extends State<SignInScreen> {
     return widget.adminSessionVault ?? AndroidAdminSessionVault(api.base);
   }
 
-  void _openAdminConsole() {
-    final vault = _adminVault();
-    if (vault == null) return;
-    pushScreen(context, AdminDispatchScreen(vault: vault));
-  }
-
   Future<void> _finishAdmin(AdminSession session) async {
     final vault = _adminVault();
     if (vault == null) return;
@@ -241,14 +235,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
             ]),
           ),
-          const SizedBox(height: 10),
-          if (state.api != null)
-            Align(alignment: Alignment.centerRight, child: TextButton.icon(
-              onPressed: _busy ? null : _openAdminConsole,
-              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
-              label: const Text('Admin / staff sign-in'),
-            )),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           if (_mode == _AuthMode.email && !_waitingForCode) ...[
             OutlinedButton.icon(
               onPressed: _busy || state.googleIdentity == null ? null : _continueWithGoogle,
