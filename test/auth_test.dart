@@ -94,7 +94,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(adminVault.value, 'fixture-admin-session');
     expect(find.text('Dispatch console'), findsOneWidget);
-    expect(find.text('admin@example.test'), findsOneWidget);
+    expect(find.text('Admin-only order operations'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
