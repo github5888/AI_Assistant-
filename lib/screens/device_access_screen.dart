@@ -175,47 +175,50 @@ class _DeviceAccessScreenState extends State<DeviceAccessScreen>
        _locationPermission == LocationPermission.always);
 
   @override
-  Widget build(BuildContext context) => ListScaffold(
-    title: 'Notifications & location',
-    subtitle: 'Manage device access for your account',
-    children: [
-      SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Notifications', style: TextStyle(
-          fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
-        const SizedBox(height: 5),
-        Text(_checking ? 'Checking device permission…' : _notificationLabel,
-          style: const TextStyle(fontSize: 14, color: AppColors.muted)),
-        const SizedBox(height: 6),
-        const Text('Allow order and delivery alerts. This is the device permission only; actual delivery also depends on account and server support.',
-          style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
-        const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: _checking || _working ? null : _enableNotifications,
-          icon: Icon(_notificationsAllowed ? Icons.refresh_rounded : Icons.notifications_active_outlined),
-          label: Text(_notificationsAllowed ? 'REFRESH NOTIFICATION SETUP' : 'TURN ON NOTIFICATIONS'),
-        )),
-      ])),
-      SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Delivery location', style: TextStyle(
-          fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
-        const SizedBox(height: 5),
-        Text(_checking ? 'Checking device permission…' : _locationLabel,
-          style: const TextStyle(fontSize: 14, color: AppColors.muted)),
-        const SizedBox(height: 6),
-        const Text('Use your current position to set or update a delivery pin. You can also enter your address manually.',
-          style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
-        const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: FilledButton.icon(
-          onPressed: _checking || _working ? null : _enableLocation,
-          icon: Icon(_locationAllowed ? Icons.location_searching_rounded : Icons.location_on_outlined),
-          label: Text(_locationAllowed ? 'SET DELIVERY LOCATION' : 'TURN ON LOCATION'),
-        )),
-      ])),
-      if (_working) const Padding(padding: EdgeInsets.symmetric(horizontal: 20),
-        child: LinearProgressIndicator(minHeight: 2)),
-      if (_message != null) Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
-        child: Text(_message!, style: const TextStyle(
-          fontSize: 13, height: 1.4, color: AppColors.muted))),
-    ],
-  );
+  Widget build(BuildContext context) => AppPage(child: Column(children: [
+    const AppTopBar(title: 'Notifications & location',
+      subtitle: 'Manage device access for your account', back: true),
+    Expanded(child: ListView(
+      padding: const EdgeInsets.only(top: 8, bottom: 24),
+      children: [
+        SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Notifications', style: TextStyle(
+            fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
+          const SizedBox(height: 5),
+          Text(_checking ? 'Checking device permission…' : _notificationLabel,
+            style: const TextStyle(fontSize: 14, color: AppColors.muted)),
+          const SizedBox(height: 6),
+          const Text('Allow order and delivery alerts. This is the device permission only; actual delivery also depends on account and server support.',
+            style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: FilledButton.icon(
+            onPressed: _checking || _working ? null : _enableNotifications,
+            icon: Icon(_notificationsAllowed ? Icons.refresh_rounded : Icons.notifications_active_outlined),
+            label: Text(_notificationsAllowed ? 'REFRESH NOTIFICATION SETUP' : 'TURN ON NOTIFICATIONS'),
+          )),
+        ])),
+        SectionCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Delivery location', style: TextStyle(
+            fontSize: 17, fontWeight: FontWeight.w900, color: AppColors.ink)),
+          const SizedBox(height: 5),
+          Text(_checking ? 'Checking device permission…' : _locationLabel,
+            style: const TextStyle(fontSize: 14, color: AppColors.muted)),
+          const SizedBox(height: 6),
+          const Text('Use your current position to set or update a delivery pin. You can also enter your address manually.',
+            style: TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted)),
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: FilledButton.icon(
+            onPressed: _checking || _working ? null : _enableLocation,
+            icon: Icon(_locationAllowed ? Icons.location_searching_rounded : Icons.location_on_outlined),
+            label: Text(_locationAllowed ? 'SET DELIVERY LOCATION' : 'TURN ON LOCATION'),
+          )),
+        ])),
+        if (_working) const Padding(padding: EdgeInsets.symmetric(horizontal: 20),
+          child: LinearProgressIndicator(minHeight: 2)),
+        if (_message != null) Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
+          child: Text(_message!, style: const TextStyle(
+            fontSize: 13, height: 1.4, color: AppColors.muted))),
+      ],
+    )),
+  ]));
 }
