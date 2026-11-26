@@ -23,6 +23,7 @@ class _SavedAddressVault implements AddressVault {
   Map<String, Object?>? value = {
     'name': 'Demo Buyer', 'fullName': 'Demo Buyer', 'phone': '9876543210',
     'address': '12, Gomti Nagar', 'addressLine1': '12, Gomti Nagar',
+    'landmark': 'Near Patrakarpuram',
     'city': 'Lucknow', 'state': 'Uttar Pradesh', 'pincode': '226010',
     'type': 'home',
     'location': {'latitude': 26.8467, 'longitude': 80.9462, 'accuracyMeters': 8.0},
@@ -161,6 +162,7 @@ void main() {
     expect(submittedAddress['name'], 'Demo Buyer');
     expect(submittedAddress['phone'], '9876543210');
     expect(submittedAddress['pincode'], '226010');
+    expect(submittedAddress['landmark'], 'Near Patrakarpuram');
     expect(submittedAddress['location'], {
       'latitude': 26.8467, 'longitude': 80.9462, 'accuracyMeters': 8.0,
     });

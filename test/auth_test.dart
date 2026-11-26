@@ -12,6 +12,7 @@ import 'package:itsclear_app/store_api.dart';
 import 'package:itsclear_app/screens/sign_in_screen.dart';
 
 const fixtureUser = {'id': 'customer-1', 'email': 'buyer@example.test', 'name': 'Demo Buyer', 'role': 'customer'};
+const fixtureAdmin = {'id': 'admin-1', 'email': 'admin@example.test', 'name': 'Store Admin', 'role': 'admin'};
 const responseSession = {'success': true, 'user': fixtureUser, 'token': 'fixture-store-session'};
 http.Response respond(Object value, [int status = 200]) => http.Response(jsonEncode(value), status);
 
@@ -33,7 +34,7 @@ class _Google implements GoogleIdentity {
 }
 
 void main() {
-  testWidgets('customer sign-in does not visibly expose the admin portal', (tester) async {
+  testWidgets('sign-in offers a visible admin route without using the customer password form', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 720);
     addTearDown(tester.view.reset);
@@ -45,9 +46,55 @@ void main() {
       home: AppScope(notifier: state, child: const SignInScreen()),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Admin / staff sign-in'), findsNothing);
+    expect(find.text('Admin / staff sign-in'), findsOneWidget);
     expect(find.text('Dispatch console'), findsNothing);
     expect(find.text('Sign in with password instead'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('admin email and password entered in customer sign-in open the dispatch console', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.reset);
+    final adminVault = _MemoryVault();
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      if (request.url.path == '/api/auth/login') {
+        expect(jsonDecode(request.body), {
+          'emailOrPhone': 'admin@example.test', 'password': 'admin-pass',
+        });
+        return respond({'user': fixtureAdmin, 'token': 'fixture-admin-session'});
+      }
+      if (request.url.path == '/api/auth/admin-login') {
+        expect(jsonDecode(request.body), {
+          'email': 'admin@example.test', 'password': 'admin-pass',
+        });
+        return respond({'user': fixtureAdmin, 'token': 'fixture-admin-session'});
+      }
+      if (request.url.path == '/api/auth/me') {
+        expect(request.headers['authorization'], 'Bearer fixture-admin-session');
+        return respond({'user': fixtureAdmin});
+      }
+      if (request.url.path == '/api/orders') {
+        expect(request.headers['authorization'], 'Bearer fixture-admin-session');
+        return respond([]);
+      }
+      throw StateError('Unexpected request: ${request.method} ${request.url}');
+    }));
+    final state = AppState(api: api);
+    addTearDown(api.close);
+    addTearDown(state.dispose);
+    await tester.pumpWidget(MaterialApp(home: AppScope(notifier: state,
+      child: SignInScreen(adminSessionVault: adminVault))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign in with password instead'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), 'admin@example.test');
+    await tester.enterText(find.byType(TextFormField).at(1), 'admin-pass');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    await tester.pumpAndSettle();
+    expect(adminVault.value, 'fixture-admin-session');
+    expect(find.text('Dispatch console'), findsOneWidget);
+    expect(find.text('admin@example.test'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -63,6 +110,10 @@ void main() {
           expect(body, {'email': 'buyer@example.test', 'otp': '123456', 'portal': 'customer'});
           return respond(responseSession);
         case '/api/auth/login':
+          if (body['emailOrPhone'] == 'admin@example.test') {
+            expect(body, {'emailOrPhone': 'admin@example.test', 'password': 'admin-pass'});
+            return respond({'user': fixtureAdmin, 'token': 'fixture-admin-session'});
+          }
           expect(body, {'emailOrPhone': 'buyer@example.test', 'password': 'fixture-pass'});
           return respond({'user': fixtureUser, 'token': 'fixture-store-session'});
         case '/api/auth/google':
@@ -92,7 +143,12 @@ void main() {
     addTearDown(api.close);
     expect((await api.requestLoginOtp('  BUYER@example.test ')).resendAfter, 30);
     expect((await api.verifyLoginOtp('buyer@example.test', '123456')).account.name, 'Demo Buyer');
-    expect((await api.passwordLogin('buyer@example.test', 'fixture-pass')).account.id, 'customer-1');
+    final customerLogin = await api.passwordLogin('buyer@example.test', 'fixture-pass');
+    expect(customerLogin.customerSession?.account.id, 'customer-1');
+    expect(customerLogin.adminSession, isNull);
+    final adminLogin = await api.passwordLogin('admin@example.test', 'admin-pass');
+    expect(adminLogin.adminSession?.email, 'admin@example.test');
+    expect(adminLogin.customerSession, isNull);
     final google = await api.googleLogin('fixture-provider-token');
     expect(google.linkEmail, 'buyer@example.test');
     expect(google.session, isNull);

@@ -96,7 +96,7 @@ class StoreApi {
     ['login', 'verify-otp'], payload: {'email': email.trim().toLowerCase(), 'otp': otp.trim(), 'portal': 'customer'},
   ));
 
-  Future<CustomerSession> passwordLogin(String emailOrPhone, String password) async => CustomerSession.fromJson(await _auth(
+  Future<PasswordLoginResult> passwordLogin(String emailOrPhone, String password) async => PasswordLoginResult.fromJson(await _auth(
     ['login'], payload: {'emailOrPhone': emailOrPhone.trim(), 'password': password},
   ));
 

@@ -334,9 +334,11 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     final orderNumber = _text(order['orderNumber'], fallback: _text(order['id'], fallback: 'Order'));
     final customer = _text(address?['fullName'] ?? address?['name'], fallback: 'Customer');
     final phone = _text(address?['phone'] ?? address?['mobile']);
-    final addressText = [address?['addressLine1'] ?? address?['address'], address?['city'],
-      address?['state'], address?['pincode'] ?? address?['postalCode']]
+    final addressText = [address?['addressLine1'] ?? address?['street'] ?? address?['address'],
+      address?['city'], address?['state'], address?['pincode'] ?? address?['postalCode']]
       .whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(', ');
+    final landmark = _text(address?['landmark'] ?? address?['addressLine2']);
+    final pin = _savedCoordinates(address);
     final total = order['total'];
     final itemCount = order['items'] is List ? (order['items'] as List).length : 0;
     final fallbackPartner = _hasFallbackPartner(order);
@@ -356,7 +358,27 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
             onPressed: () => _call(phone), icon: const Icon(Icons.call_outlined, size: 17)),
         ]),
         if (addressText.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4),
-          child: Text(addressText, style: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted))),
+          child: Text('Delivery address: $addressText',
+            style: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted))),
+        if (landmark.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 3),
+          child: Text('Landmark: $landmark',
+            style: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted))),
+        if (pin != null) Padding(padding: const EdgeInsets.only(top: 2),
+          child: Row(children: [
+            Expanded(child: Text('Saved pin · ${pin.$1.toStringAsFixed(6)}, ${pin.$2.toStringAsFixed(6)}',
+              style: const TextStyle(fontSize: 10, color: AppColors.muted))),
+            TextButton.icon(
+              onPressed: () => _openDeliveryMap(pin.$1, pin.$2),
+              icon: const Icon(Icons.map_outlined, size: 16),
+              label: const Text('Open map'),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
+                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+            ),
+          ])),
+        if (addressText.isEmpty && landmark.isEmpty && pin == null)
+          const Padding(padding: EdgeInsets.only(top: 4),
+            child: Text('No delivery address or saved map pin was included with this order.',
+              style: TextStyle(fontSize: 11, color: AppColors.muted))),
         const SizedBox(height: 7),
         Text('$itemCount item${itemCount == 1 ? '' : 's'} · ${total is num ? '₹${total.toStringAsFixed(0)}' : 'Total unavailable'}',
           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
@@ -415,6 +437,36 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     return Padding(padding: const EdgeInsets.only(top: 3), child: Text('$name$suffix',
       maxLines: 2, overflow: TextOverflow.ellipsis,
       style: const TextStyle(fontSize: 10, color: AppColors.muted)));
+  }
+
+  static double? _coordinate(Object? value) {
+    final number = value is num ? value.toDouble() : double.tryParse('$value');
+    return number != null && number.isFinite ? number : null;
+  }
+
+  static (double, double)? _savedCoordinates(Map? address) {
+    final location = _asMap(address?['location']);
+    final latitude = _coordinate(location?['latitude'] ?? address?['latitude']);
+    final longitude = _coordinate(location?['longitude'] ?? address?['longitude']);
+    if (latitude == null || longitude == null || latitude < -90 || latitude > 90 ||
+        longitude < -180 || longitude > 180) return null;
+    return (latitude, longitude);
+  }
+
+  Future<void> _openDeliveryMap(double latitude, double longitude) async {
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1', 'query': '$latitude,$longitude',
+    });
+    try {
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open a map app.')));
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open a map app.')));
+    }
   }
 
   Future<void> _call(String phone) async {

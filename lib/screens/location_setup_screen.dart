@@ -77,6 +77,8 @@ class _DeliveryLocationSetupScreenState extends State<DeliveryLocationSetupScree
         'address': pin.street.isNotEmpty ? pin.street : previousText('addressLine1', 'address'),
         'addressLine1': pin.street.isNotEmpty ? pin.street : previousText('addressLine1', 'address'),
         'street': pin.street.isNotEmpty ? pin.street : previousText('street', 'address'),
+        if (previousText('landmark', 'addressLine2').isNotEmpty)
+          'landmark': previousText('landmark', 'addressLine2'),
         'city': pin.city.isNotEmpty ? pin.city : previousText('city'),
         'state': pin.state.isNotEmpty ? pin.state : previousText('state'),
         'pincode': pin.pincode.isNotEmpty ? pin.pincode : previousText('pincode', 'postalCode'),

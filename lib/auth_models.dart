@@ -69,6 +69,24 @@ class GoogleExchange {
   final String? linkEmail;
 }
 
+class PasswordLoginResult {
+  const PasswordLoginResult.customer(CustomerSession session)
+      : customerSession = session, adminSession = null;
+  const PasswordLoginResult.admin(AdminSession session)
+      : customerSession = null, adminSession = session;
+
+  final CustomerSession? customerSession;
+  final AdminSession? adminSession;
+
+  factory PasswordLoginResult.fromJson(Map<String, dynamic> json) {
+    final user = json['user'];
+    if (user is Map && user['role'] == 'admin') {
+      return PasswordLoginResult.admin(AdminSession.fromJson(json));
+    }
+    return PasswordLoginResult.customer(CustomerSession.fromJson(json));
+  }
+}
+
 class OtpChallenge {
   const OtpChallenge(this.resendAfter, this.expiresIn);
   final int resendAfter;

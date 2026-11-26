@@ -33,6 +33,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   final _pin = TextEditingController();
   final _city = TextEditingController();
   final _street = TextEditingController();
+  final _landmark = TextEditingController();
   final _verification = TextEditingController();
   final _random = math.Random.secure();
   late String _verificationCode;
@@ -72,6 +73,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
       _name.text = _savedText(saved, 'fullName', 'name');
       _mobile.text = _savedText(saved, 'phone', 'mobile');
       _street.text = _savedText(saved, 'addressLine1', 'address');
+      _landmark.text = _savedText(saved, 'landmark', 'addressLine2');
       _city.text = _savedText(saved, 'city');
       _pin.text = _savedText(saved, 'pincode', 'postalCode');
       _stateName = _savedText(saved, 'state').isEmpty
@@ -97,7 +99,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_name, _mobile, _pin, _city, _street, _verification]) {
+    for (final controller in [_name, _mobile, _pin, _city, _street, _landmark, _verification]) {
       controller.dispose();
     }
     super.dispose();
@@ -132,6 +134,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     'address': _street.text.trim(),
     'addressLine1': _street.text.trim(),
     'street': _street.text.trim(),
+    if (_landmark.text.trim().isNotEmpty) 'landmark': _landmark.text.trim(),
     'city': _city.text.trim(),
     'state': _stateName,
     'pincode': _pin.text.trim(),
@@ -368,8 +371,8 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
               children: [Expanded(child: first), const SizedBox(width: 10), Expanded(child: second)],
             );
             if (!twoColumns) return Column(children: [name, mobile, pin, city,
-              _streetField()]);
-            return Column(children: [pair(name, mobile), pair(pin, city), _streetField()]);
+              _streetField(), _landmarkField()]);
+            return Column(children: [pair(name, mobile), pair(pin, city), _streetField(), _landmarkField()]);
           }),
           OutlinedButton.icon(
             onPressed: _gettingLocation ? null : _useCurrentLocation,
@@ -438,10 +441,17 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   }
 
   Widget _streetField() => _input(_street,
-    'Street address / house no. / landmark',
+    'Street address / house no.',
     'Flat / house no., apartment, street, colony',
     validator: _required,
     autofill: AutofillHints.streetAddressLine1,
+    textCapitalization: TextCapitalization.sentences,
+  );
+
+  Widget _landmarkField() => _input(_landmark,
+    'Landmark (optional)',
+    'Near a recognizable place',
+    validator: (_) => null,
     textCapitalization: TextCapitalization.sentences,
   );
 

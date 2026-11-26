@@ -13,7 +13,9 @@ import 'admin_dispatch_screen.dart';
 enum _AuthMode { email, password, register, linkGoogle }
 
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({super.key, this.adminSessionVault});
+
+  final SessionVault? adminSessionVault;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -99,10 +101,25 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
-  void _openAdminConsole() {
+  SessionVault? _adminVault() {
     final api = AppScope.of(context).api;
-    if (api == null) return;
-    pushScreen(context, AdminDispatchScreen(vault: AndroidAdminSessionVault(api.base)));
+    if (api == null) return null;
+    return widget.adminSessionVault ?? AndroidAdminSessionVault(api.base);
+  }
+
+  void _openAdminConsole() {
+    final vault = _adminVault();
+    if (vault == null) return;
+    pushScreen(context, AdminDispatchScreen(vault: vault));
+  }
+
+  Future<void> _finishAdmin(AdminSession session) async {
+    final vault = _adminVault();
+    if (vault == null) return;
+    await vault.write(session.token);
+    if (!mounted) return;
+    _password.clear();
+    await pushScreen(context, AdminDispatchScreen(vault: vault));
   }
 
   Future<void> _finish(AppState state, CustomerSession session) async {
@@ -164,11 +181,24 @@ class _SignInScreenState extends State<SignInScreen> {
     }
     _run((state) async {
       final api = state.api!;
+      if (_mode == _AuthMode.password) {
+        final result = await api.passwordLogin(_identity.text, _password.text);
+        final adminSession = result.adminSession;
+        if (adminSession != null) {
+          // Re-authenticate through the backend's admin-only endpoint so the
+          // stored token uses the shorter admin lifetime and role checks.
+          final verifiedAdmin = await api.adminPasswordLogin(_identity.text, _password.text);
+          await _finishAdmin(verifiedAdmin);
+        } else {
+          await _finish(state, result.customerSession!);
+        }
+        return;
+      }
       final session = switch (_mode) {
         _AuthMode.email => await api.verifyLoginOtp(_challengeEmail!, _otp.text),
         _AuthMode.register => await api.verifyRegistrationOtp(_challengeEmail!, _otp.text),
         _AuthMode.linkGoogle => await api.linkGoogleOtp(_googleToken!, _otp.text),
-        _AuthMode.password => await api.passwordLogin(_identity.text, _password.text),
+        _AuthMode.password => throw StateError('Password login is handled above.'),
       };
       await _finish(state, session);
     });
@@ -200,12 +230,8 @@ class _SignInScreenState extends State<SignInScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(gradient: AppGradients.navy, borderRadius: BorderRadius.circular(24)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onLongPress: state.api == null ? null : _openAdminConsole,
-                child: const Text('itsclear.',
-                  style: TextStyle(color: AppColors.amber, fontSize: 20, fontWeight: FontWeight.w900)),
-              ),
+              const Text('itsclear.',
+                style: TextStyle(color: AppColors.amber, fontSize: 20, fontWeight: FontWeight.w900)),
               const SizedBox(height: 12),
               Text(linking ? 'Link your Google account' : registering ? 'Join itsclear' : 'Welcome to itsclear',
                 style: const TextStyle(color: Colors.white, fontSize: 26, height: 1.13, fontWeight: FontWeight.w800)),
@@ -215,7 +241,14 @@ class _SignInScreenState extends State<SignInScreen> {
                 style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
             ]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+          if (state.api != null)
+            Align(alignment: Alignment.centerRight, child: TextButton.icon(
+              onPressed: _busy ? null : _openAdminConsole,
+              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+              label: const Text('Admin / staff sign-in'),
+            )),
+          const SizedBox(height: 8),
           if (_mode == _AuthMode.email && !_waitingForCode) ...[
             OutlinedButton.icon(
               onPressed: _busy || state.googleIdentity == null ? null : _continueWithGoogle,
