@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,7 +19,9 @@ import 'screens/search_screen.dart';
 import 'screens/location_setup_screen.dart';
 import 'screens/shop_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   const base = String.fromEnvironment('ITSCLEAR_API_BASE_URL', defaultValue: StoreApi.productionUrl);
   const googleWebClientId = String.fromEnvironment('ITSCLEAR_GOOGLE_WEB_CLIENT_ID',
     defaultValue: '859140870913-uu2j7n6cilpg9k4m7ec6aos2da6m542r.apps.googleusercontent.com');

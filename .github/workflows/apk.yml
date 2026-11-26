@@ -56,8 +56,24 @@ jobs:
           gradle, count = re.subn(r'applicationId\s*=\s*"[^"]+"',
                                   f'applicationId = "{app_id}"', generated.read_text())
           assert count == 1, 'Expected one applicationId in generated runner'
+          gradle = gradle.replace(
+              '    id("dev.flutter.flutter-gradle-plugin")',
+              '    id("dev.flutter.flutter-gradle-plugin")\n    id("com.google.gms.google-services")',
+              1,
+          )
           generated.write_text(gradle)
+
+          settings = Path('/tmp/itsclear_runner/android/settings.gradle.kts')
+          settings_text = settings.read_text()
+          marker = 'plugins {\n'
+          assert marker in settings_text, 'Expected a Gradle plugins block'
+          settings_text = settings_text.replace(
+              marker, marker + '    id("com.google.gms.google-services") version "4.4.4" apply false\n', 1
+          )
+          settings.write_text(settings_text)
           PY
+          # Include the Firebase Android client configuration in the generated runner.
+          cp android/app/google-services.json /tmp/itsclear_runner/android/app/google-services.json
           # Keep the native reverse-geocoding MethodChannel in the generated runner.
           mkdir -p /tmp/itsclear_runner/android/app/src/main/kotlin/com/itsclear/app
           cp android/app/src/main/kotlin/com/itsclear/app/MainActivity.kt \

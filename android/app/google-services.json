@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "720133565641",
+    "project_id": "itsclear-b22e9",
+    "storage_bucket": "itsclear-b22e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720133565641:android:e0f5425b4f46f5e1553118",
+        "android_client_info": {
+          "package_name": "com.itsclear.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOUIGYgYnJcHz4JJzuHN92xKfsB-gICkk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
