@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'auth_models.dart';
 import 'data.dart';
 import 'payment_models.dart';
+import 'notification_models.dart';
 
 /// The storefront catalog and customer authentication API.
 class StoreApi {
@@ -151,6 +152,95 @@ class StoreApi {
   Future<AdminSession> currentAdmin(String token) async {
     final result = await _auth(['me'], token: token);
     return AdminSession.fromJson({...result, 'token': token});
+  }
+
+  Future<Map<String, dynamic>> _notificationRequest(String method, List<String> route,
+      String token, {Map<String, Object?>? payload, Map<String, String>? query}) async {
+    final request = http.Request(method,
+      base.replace(pathSegments: ['api', ...route], queryParameters: query))
+      ..followRedirects = false;
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    if (payload != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(payload);
+    }
+    final http.Response response;
+    try {
+      response = await http.Response.fromStream(await _client.send(request))
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      throw const StoreApiException('Could not reach the notifications service. Try again.');
+    }
+    Map<String, dynamic> result = const {};
+    try {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      if (decoded is Map<String, dynamic>) result = decoded;
+    } on FormatException {
+      throw const StoreApiException('The notifications service returned invalid data.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300 || result['success'] == false || result.isEmpty) {
+      final message = result['error'];
+      throw StoreApiException(
+        message is String && message.isNotEmpty ? message : 'The notifications request could not be completed.',
+        status: response.statusCode,
+      );
+    }
+    return result;
+  }
+
+  Future<Map<String, dynamic>> registerDevice(String token, Map<String, Object?> device) =>
+      _notificationRequest('POST', ['devices', 'register'], token, payload: device);
+
+  Future<Map<String, dynamic>> unregisterDevice(String token, String deviceIdOrFcmToken) =>
+      _notificationRequest('DELETE', ['devices', deviceIdOrFcmToken], token);
+
+  Future<NotificationHistoryPage> notificationHistory(String token, {
+    int page = 1, int limit = 20, String status = 'all', String? category,
+  }) async => NotificationHistoryPage.fromJson(await _notificationRequest(
+    'GET', ['notifications'], token, query: {
+      'page': '$page', 'limit': '${limit.clamp(1, 50)}', 'status': status,
+      if (category != null && category.isNotEmpty) 'category': category,
+    },
+  ));
+
+  Future<int> notificationUnreadCount(String token) async {
+    final response = await _notificationRequest('GET', ['notifications', 'unread-count'], token);
+    final count = response['unreadCount'];
+    if (count is! num || !count.isFinite || count < 0) {
+      throw const StoreApiException('The unread notification count is invalid.');
+    }
+    return count.toInt();
+  }
+
+  Future<int> markNotificationRead(String token, String id) async {
+    final response = await _notificationRequest('PATCH', ['notifications', id, 'read'], token);
+    final count = response['unreadCount'];
+    return count is num && count.isFinite && count >= 0 ? count.toInt() : 0;
+  }
+
+  Future<int> markAllNotificationsRead(String token) async {
+    final response = await _notificationRequest('PATCH', ['notifications', 'read-all'], token);
+    final count = response['unreadCount'];
+    return count is num && count.isFinite && count >= 0 ? count.toInt() : 0;
+  }
+
+  Future<int> deleteNotification(String token, String id) async {
+    final response = await _notificationRequest('DELETE', ['notifications', id], token);
+    final count = response['unreadCount'];
+    return count is num && count.isFinite && count >= 0 ? count.toInt() : 0;
+  }
+
+  Future<NotificationPreferences> notificationPreferences(String token) async {
+    final response = await _notificationRequest('GET', ['notifications', 'preferences'], token);
+    return NotificationPreferences.fromJson(response['preferences']);
+  }
+
+  Future<NotificationPreferences> updateNotificationPreferences(String token,
+      NotificationPreferences preferences) async {
+    final response = await _notificationRequest('PATCH', ['notifications', 'preferences'],
+      token, payload: preferences.toJson());
+    return NotificationPreferences.fromJson(response['preferences']);
   }
 
   Future<List<Product>> products() async {

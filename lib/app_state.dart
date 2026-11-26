@@ -45,6 +45,20 @@ class AppState extends ChangeNotifier {
   final PaymentGateway? paymentGateway;
   CustomerSession? _session;
   CustomerAccount? get customer => _session?.account;
+  String? get customerToken => _session?.token;
+  Future<void> Function(Map<String, dynamic>)? notificationOpener;
+  int notificationUnreadCount = 0;
+
+  void updateNotificationUnreadCount(int count) {
+    final next = count < 0 ? 0 : count;
+    if (notificationUnreadCount == next || _disposed) return;
+    notificationUnreadCount = next;
+    notifyListeners();
+  }
+
+  Future<void> openNotification(Map<String, dynamic> data) async {
+    await notificationOpener?.call(data);
+  }
   bool restoringSession = false;
   Map<String, Object?>? savedShippingAddress;
   bool restoringAddress = false;
@@ -110,6 +124,7 @@ class AppState extends ChangeNotifier {
     if (_session?.account.id != session.account.id) {
       _customerOrders = const [];
       customerOrdersError = null;
+      notificationUnreadCount = 0;
     }
     _session = session;
     notifyListeners();
@@ -123,6 +138,7 @@ class AppState extends ChangeNotifier {
     }
     if (_disposed) return;
     _session = null;
+    notificationUnreadCount = 0;
     _customerOrders = const [];
     useGrainCoins = false;
     _clearLiveCoupon();

@@ -130,7 +130,9 @@ class ProfileScreen extends StatelessWidget {
               InfoRow(
                 icon: Icons.notifications_none,
                 title: 'Notifications',
-                subtitle: 'Harvest & delivery updates',
+                subtitle: state.notificationUnreadCount > 0
+                    ? '${state.notificationUnreadCount} unread · Harvest & delivery updates'
+                    : 'Harvest & delivery updates',
                 onTap: () => pushScreen(context, const NotificationsScreen()),
               ),
               const Divider(height: 1, color: AppColors.line),

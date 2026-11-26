@@ -1,5 +1,9 @@
 package com.itsclear.app
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.media.AudioAttributes
+import android.provider.Settings
 import android.location.Address
 import android.location.Geocoder
 import android.os.Build
@@ -12,6 +16,23 @@ import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private val geocoderExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                "ItsClear Order & Offer Updates",
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = "Real-time order, delivery, and offer updates"
+                enableVibration(true)
+                setSound(Settings.System.DEFAULT_NOTIFICATION_URI,
+                    AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build())
+            }
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -77,5 +98,6 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val GEOCODING_CHANNEL = "com.itsclear.app/geocoding"
+        private const val NOTIFICATION_CHANNEL_ID = "itsclear_notifications"
     }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'app_state.dart';
 import 'auth_platform.dart';
 import 'payment_platform.dart';
+import 'push_notifications.dart';
 import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -26,16 +29,21 @@ Future<void> main() async {
   const googleWebClientId = String.fromEnvironment('ITSCLEAR_GOOGLE_WEB_CLIENT_ID',
     defaultValue: '859140870913-uu2j7n6cilpg9k4m7ec6aos2da6m542r.apps.googleusercontent.com');
   final api = StoreApi(base);
-  runApp(ItsClearApp(api: api, sessionVault: AndroidSessionVault(api.base),
+  final navigatorKey = GlobalKey<NavigatorState>();
+  final pushNotifications = PushNotificationService(api: api, navigatorKey: navigatorKey);
+  runApp(ItsClearApp(api: api, pushNotifications: pushNotifications,
+    sessionVault: AndroidSessionVault(api.base),
     addressVault: AndroidAddressVault(api.base),
     googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId),
     paymentGateway: NativeRazorpayGateway()));
 }
 
 class ItsClearApp extends StatefulWidget {
-  const ItsClearApp({super.key, this.api, this.sessionVault, this.addressVault, this.googleIdentity, this.paymentGateway});
+  const ItsClearApp({super.key, this.api, this.sessionVault, this.addressVault,
+    this.googleIdentity, this.paymentGateway, this.pushNotifications});
 
   final StoreApi? api;
+  final PushNotificationService? pushNotifications;
   final SessionVault? sessionVault;
   final AddressVault? addressVault;
   final GoogleIdentity? googleIdentity;
@@ -54,6 +62,9 @@ class _ItsClearAppState extends State<ItsClearApp> {
     _state = AppState(api: widget.api, sessionVault: widget.sessionVault,
       addressVault: widget.addressVault,
       googleIdentity: widget.googleIdentity, paymentGateway: widget.paymentGateway);
+    if (widget.pushNotifications != null) {
+      unawaited(widget.pushNotifications!.initialize(_state));
+    }
     _state.restoreSession();
     _state.restoreSavedAddress();
     _state.refreshStore();
@@ -61,6 +72,9 @@ class _ItsClearAppState extends State<ItsClearApp> {
 
   @override
   void dispose() {
+    if (widget.pushNotifications != null) {
+      unawaited(widget.pushNotifications!.dispose());
+    }
     _state.dispose();
     widget.api?.close();
     super.dispose();
@@ -71,6 +85,7 @@ class _ItsClearAppState extends State<ItsClearApp> {
     return AppScope(
       notifier: _state,
       child: MaterialApp(
+        navigatorKey: widget.pushNotifications?.navigatorKey,
         title: 'itsclear™',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
