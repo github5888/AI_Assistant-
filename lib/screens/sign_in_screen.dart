@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../auth_models.dart';
+import '../auth_platform.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'admin_dispatch_screen.dart';
 
 enum _AuthMode { email, password, register, linkGoogle }
 
@@ -278,6 +280,17 @@ class _SignInScreenState extends State<SignInScreen> {
           ] else
             TextButton(onPressed: _busy ? null : () => _changeMode(_AuthMode.email),
               child: Text(_mode == _AuthMode.email ? 'Change email address' : 'Back to email sign-in')),
+          if (state.api != null) ...[
+            const SizedBox(height: 8),
+            const Divider(),
+            TextButton.icon(
+              onPressed: _busy ? null : () => pushScreen(context, AdminDispatchScreen(
+                vault: AndroidAdminSessionVault(state.api!.base),
+              )),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              label: const Text('Admin / staff sign-in'),
+            ),
+          ],
         ],
       )),
     ]));
