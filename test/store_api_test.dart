@@ -316,6 +316,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Store is connected'), findsOneWidget);
     expect(find.text('Retry'), findsNothing);
+    expect(find.text('Notifications & location'), findsOneWidget);
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
     expect(find.text('Send email OTP'), findsOneWidget);

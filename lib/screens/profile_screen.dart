@@ -8,6 +8,7 @@ import '../widgets.dart';
 import 'calculator_screen.dart';
 import 'sign_in_screen.dart';
 import 'commerce_screens.dart';
+import 'device_access_screen.dart';
 import 'list_screens.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -78,6 +79,12 @@ class ProfileScreen extends StatelessWidget {
               TextButton(onPressed: state.isLoadingCatalog ? null : state.refreshStore,
                 child: Text(state.isLoadingCatalog ? 'Checking…' : 'Retry')),
           ])),
+          SectionCard(padding: const EdgeInsets.symmetric(vertical: 3), child: InfoRow(
+            icon: Icons.tune_rounded,
+            title: 'Notifications & location',
+            subtitle: 'Turn on device alerts and set your delivery location',
+            onTap: () => pushScreen(context, const DeviceAccessScreen()),
+          )),
           if (state.savedShippingAddress != null)
             _SavedDeliveryAddress(address: state.savedShippingAddress!, onRemove: state.clearSavedShippingAddress),
           SectionCard(padding: const EdgeInsets.symmetric(vertical: 3), child: Column(children: [

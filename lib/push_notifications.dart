@@ -44,6 +44,10 @@ class PushNotificationService {
   Future<void> initialize(AppState state) async {
     _state = state;
     state.notificationOpener = (data) async => _handleMessageData(data);
+    state.refreshPushRegistration = () async {
+      final token = state.customerToken;
+      if (token != null) await _register(token);
+    };
     state.addListener(_onStateChanged);
     FirebaseMessaging.onBackgroundMessage(itsClearFirebaseBackgroundHandler);
     _foregroundSubscription = FirebaseMessaging.onMessage.listen(_showForegroundMessage);
@@ -267,6 +271,7 @@ class PushNotificationService {
     if (_state != null) {
       _state!.removeListener(_onStateChanged);
       _state!.notificationOpener = null;
+      _state!.refreshPushRegistration = null;
     }
     await _foregroundSubscription?.cancel();
     await _openedSubscription?.cancel();

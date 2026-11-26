@@ -47,6 +47,7 @@ class AppState extends ChangeNotifier {
   CustomerAccount? get customer => _session?.account;
   String? get customerToken => _session?.token;
   Future<void> Function(Map<String, dynamic>)? notificationOpener;
+  Future<void> Function()? refreshPushRegistration;
   int notificationUnreadCount = 0;
 
   void updateNotificationUnreadCount(int count) {
