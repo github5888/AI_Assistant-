@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
               size: 16, color: state.storeOnline == true ? AppColors.green : AppColors.muted),
             const SizedBox(width: 7),
             Expanded(child: Text(storeMessage,
-              style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600))),
+              style: const TextStyle(fontSize: 13, color: AppColors.muted, fontWeight: FontWeight.w600))),
             if (state.storeOnline != true)
               TextButton(onPressed: state.isLoadingCatalog ? null : state.refreshStore,
                 child: Text(state.isLoadingCatalog ? 'Checking…' : 'Retry')),
@@ -240,11 +240,11 @@ class _SavedDeliveryAddress extends StatelessWidget {
       const Text('Saved delivery address', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
       const SizedBox(height: 5),
       Text(lines.isEmpty ? 'Address saved on this device' : lines.join('\n'),
-        style: const TextStyle(fontSize: 12, height: 1.4, color: AppColors.muted)),
+        style: const TextStyle(fontSize: 13, height: 1.45, color: AppColors.muted)),
       if (latitude != null && longitude != null) ...[
         const SizedBox(height: 5),
         Text('Exact pin · ${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
-          style: const TextStyle(fontSize: 10, color: AppColors.green, fontWeight: FontWeight.w700)),
+          style: const TextStyle(fontSize: 12, color: AppColors.green, fontWeight: FontWeight.w700)),
       ],
       const SizedBox(height: 6),
       Wrap(spacing: 8, children: [

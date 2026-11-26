@@ -20,7 +20,12 @@ class _AdminVault implements SessionVault {
 }
 
 void main() {
-  testWidgets('admin can open saved pins and address searches when no pin was saved', (tester) async {
+  testWidgets('admin map cards remain readable with larger system text', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     final api = StoreApi('https://example.test', client: MockClient((request) async {
       expect(request.headers['authorization'], 'Bearer admin-test-token');
       if (request.url.path == '/api/auth/me') {

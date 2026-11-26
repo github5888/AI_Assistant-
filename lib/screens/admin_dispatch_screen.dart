@@ -313,7 +313,7 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(session.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-            Text(session.email, style: const TextStyle(fontSize: 11, color: AppColors.muted)),
+            Text(session.email, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ])),
           IconButton(tooltip: 'Sign out', onPressed: _working ? null : _signOut,
             icon: const Icon(Icons.logout_rounded)),
@@ -355,65 +355,65 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
         const Divider(height: 18),
         Text(customer, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
         if (phone.isNotEmpty) Row(children: [
-          Expanded(child: Text(phone, style: const TextStyle(fontSize: 11, color: AppColors.muted))),
+          Expanded(child: Text(phone, style: const TextStyle(fontSize: 13, color: AppColors.muted))),
           IconButton(tooltip: 'Call customer', visualDensity: VisualDensity.compact,
             onPressed: () => _call(phone), icon: const Icon(Icons.call_outlined, size: 17)),
         ]),
         if (addressText.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4),
           child: Text('Delivery address: $addressText',
-            style: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted))),
+            style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted))),
         if (landmark.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 3),
           child: Text('Landmark: $landmark',
-            style: const TextStyle(fontSize: 11, height: 1.35, color: AppColors.muted))),
+            style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.muted))),
         if (pin != null) Padding(padding: const EdgeInsets.only(top: 2),
           child: Row(children: [
             Expanded(child: Text('Saved pin · ${pin.$1.toStringAsFixed(6)}, ${pin.$2.toStringAsFixed(6)}',
-              style: const TextStyle(fontSize: 10, color: AppColors.muted))),
+              style: const TextStyle(fontSize: 12, color: AppColors.muted))),
             TextButton.icon(
               onPressed: () => _openDeliveryMap(pin.$1, pin.$2),
-              icon: const Icon(Icons.map_outlined, size: 16),
+              icon: const Icon(Icons.map_outlined, size: 18),
               label: const Text('Open map'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
-                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
             ),
           ])),
         if (pin == null && addressMapQuery.isNotEmpty) Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Row(children: [
             const Expanded(child: Text('No saved pin · address search',
-              style: TextStyle(fontSize: 10, color: AppColors.muted))),
+              style: TextStyle(fontSize: 12, color: AppColors.muted))),
             TextButton.icon(
               onPressed: () => _openAddressMap(addressMapQuery),
-              icon: const Icon(Icons.map_outlined, size: 16),
+              icon: const Icon(Icons.map_outlined, size: 18),
               label: const Text('Open map'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
-                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
             ),
           ])),
         if (addressText.isEmpty && landmark.isEmpty && pin == null)
           const Padding(padding: EdgeInsets.only(top: 4),
             child: Text('No delivery address or saved map pin was included with this order.',
-              style: TextStyle(fontSize: 11, color: AppColors.muted))),
+              style: TextStyle(fontSize: 12, color: AppColors.muted))),
         const SizedBox(height: 7),
         Text('$itemCount item${itemCount == 1 ? '' : 's'} · ${total is num ? '₹${total.toStringAsFixed(0)}' : 'Total unavailable'}',
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
         _itemsSummary(order['items']),
         if (fallbackPartner) ...[
           const SizedBox(height: 9),
           const Text('Existing partner fields match the website fallback sample. Confirm the real partner before dispatch.',
-            style: TextStyle(fontSize: 10, color: Color(0xFF805417))),
+            style: TextStyle(fontSize: 12, height: 1.35, color: Color(0xFF805417))),
         ] else if (_text(order['driverName']).isNotEmpty || _text(order['driverPhone']).isNotEmpty) ...[
           const SizedBox(height: 9),
           Container(width: double.infinity, padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: const Color(0xFFF0F4FA), borderRadius: BorderRadius.circular(12)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Assigned delivery partner', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+              const Text('Assigned delivery partner', style: TextStyle(fontSize: 12, color: AppColors.muted)),
               const SizedBox(height: 3),
               Text(_text(order['driverName'], fallback: 'Partner details'),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
               Text([_text(order['driverPhone']), _text(order['vehicleNumber'])]
                 .where((value) => value.isNotEmpty).join(' · '),
-                style: const TextStyle(fontSize: 10, color: AppColors.muted)),
+                style: const TextStyle(fontSize: 12, color: AppColors.muted)),
             ])),
         ],
         const SizedBox(height: 9),
@@ -451,7 +451,7 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
         (quantity is num ? ' × ${quantity.toInt()}' : '');
     return Padding(padding: const EdgeInsets.only(top: 3), child: Text('$name$suffix',
       maxLines: 2, overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 10, color: AppColors.muted)));
+      style: const TextStyle(fontSize: 12, color: AppColors.muted)));
   }
 
   static double? _coordinate(Object? value) {
@@ -540,7 +540,7 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
     decoration: BoxDecoration(color: const Color(0xFFE8F7EF), borderRadius: BorderRadius.circular(20)),
-    child: Text(status, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800,
+    child: Text(status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
       color: AppColors.green)),
   );
 }

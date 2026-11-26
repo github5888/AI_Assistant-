@@ -1357,7 +1357,7 @@ class InfoRow extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: AppColors.ink,
                     ),
@@ -1367,7 +1367,7 @@ class InfoRow extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         subtitle!,
-                        style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+                        style: const TextStyle(fontSize: 11, color: AppColors.muted),
                       ),
                     ),
                   if (trailingBelow)
@@ -1375,7 +1375,7 @@ class InfoRow extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 5),
                       child: Text(trailing!, maxLines: 3, softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 10, height: 1.3,
+                        style: const TextStyle(fontSize: 12, height: 1.3,
                           fontWeight: FontWeight.w800, color: AppColors.ink)),
                     ),
                 ],
@@ -1385,7 +1385,7 @@ class InfoRow extends StatelessWidget {
               Text(
                 trailing!,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: AppColors.ink,
                 ),
