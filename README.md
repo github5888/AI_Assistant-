@@ -29,7 +29,7 @@ The Google native SDK needs an **Android OAuth client** registered in the same G
 
 ## Firebase Android configuration
 
-`android/app/google-services.json` connects package `com.itsclear.app` to the provided Firebase Android app. The Google Services Gradle plugin is applied in the Android build (including the generated runner used by CI), and `firebase_core` initializes Firebase at app startup. This is client configuration only: actual order/admin/partner push delivery still requires authenticated FCM-token registration and server-side Firebase Admin SDK sends. No server credential is stored in this app.
+`android/app/google-services.json` connects package `com.itsclear.app` to the provided Firebase Android app. The Google Services Gradle plugin is applied in the Android build (including the generated runner used by CI), and `firebase_core` initializes Firebase at app startup. This is client configuration only: actual order/admin/partner push delivery still requires authenticated FCM-token registration and server-side Firebase Admin SDK sends. No server credential is stored in this app. In admin dispatch, saved coordinates open as the exact pin; when an older order has no coordinates, its entered address can still be searched in Maps and is clearly marked as an address search, not a saved pin.
 
 ## Checkout and tracking
 

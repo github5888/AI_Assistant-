@@ -339,6 +339,8 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
       .whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).join(', ');
     final landmark = _text(address?['landmark'] ?? address?['addressLine2']);
     final pin = _savedCoordinates(address);
+    final addressMapQuery = [landmark, addressText]
+        .where((part) => part.isNotEmpty).join(', ');
     final total = order['total'];
     final itemCount = order['items'] is List ? (order['items'] as List).length : 0;
     final fallbackPartner = _hasFallbackPartner(order);
@@ -369,6 +371,19 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
               style: const TextStyle(fontSize: 10, color: AppColors.muted))),
             TextButton.icon(
               onPressed: () => _openDeliveryMap(pin.$1, pin.$2),
+              icon: const Icon(Icons.map_outlined, size: 16),
+              label: const Text('Open map'),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
+                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+            ),
+          ])),
+        if (pin == null && addressMapQuery.isNotEmpty) Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(children: [
+            const Expanded(child: Text('No saved pin · address search',
+              style: TextStyle(fontSize: 10, color: AppColors.muted))),
+            TextButton.icon(
+              onPressed: () => _openAddressMap(addressMapQuery),
               icon: const Icon(Icons.map_outlined, size: 16),
               label: const Text('Open map'),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact,
@@ -453,9 +468,14 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     return (latitude, longitude);
   }
 
-  Future<void> _openDeliveryMap(double latitude, double longitude) async {
+  Future<void> _openDeliveryMap(double latitude, double longitude) =>
+      _launchMapQuery('$latitude,$longitude');
+
+  Future<void> _openAddressMap(String address) => _launchMapQuery(address);
+
+  Future<void> _launchMapQuery(String query) async {
     final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1', 'query': '$latitude,$longitude',
+      'api': '1', 'query': query,
     });
     try {
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
