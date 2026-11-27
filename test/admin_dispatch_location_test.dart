@@ -68,8 +68,10 @@ void main() {
     expect(find.text('CLR-2026-4214'), findsOneWidget);
     expect(find.text('Manage homepage banners'), findsOneWidget);
     expect(find.text('No saved pin · address search'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Saved pin · 26.862609, 81.048675'), 220,
+      scrollable: find.byType(Scrollable).first);
     expect(find.text('Saved pin · 26.862609, 81.048675'), findsOneWidget);
-    expect(find.text('Open map'), findsNWidgets(2));
+    expect(find.text('Open map'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 }

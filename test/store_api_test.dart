@@ -112,7 +112,7 @@ void main() {
       }
       if (request.url.path == '/api/content/hero_banners' && request.method == 'PUT') {
         expect(request.headers['authorization'], 'Bearer admin-banner-token');
-        final payload = jsonDecode((request as http.Request).body) as Map<String, dynamic>;
+        final payload = jsonDecode(request.body) as Map<String, dynamic>;
         expect(payload['data'], [banner]);
         expect(payload.containsKey('userId'), isFalse);
         return jsonAnswer({'key': 'hero_banners', 'data': [banner]});
