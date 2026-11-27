@@ -546,11 +546,11 @@ class StoreApi {
     required String driverName,
     required String driverPhone,
     required String vehicleNumber,
-    required String estimatedDelivery,
   }) async {
-    final result = await _orderRequest([id, 'dispatch'], 'PATCH', token, payload: {
+    final result = await _orderRequest([id, 'status'], 'PATCH', token, payload: {
+      'status': 'out_for_delivery',
       'driverName': driverName.trim(), 'driverPhone': driverPhone.trim(),
-      'vehicleNumber': vehicleNumber.trim(), 'estimatedDelivery': estimatedDelivery.trim(),
+      'vehicleNumber': vehicleNumber.trim(),
     });
     if (result is! Map<String, dynamic>) throw const StoreApiException('The store returned an invalid dispatch update.');
     return Map<String, dynamic>.unmodifiable(result);

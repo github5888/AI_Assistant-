@@ -68,15 +68,14 @@ void main() {
           expect(request.headers['authorization'], 'Bearer admin-session');
           expect(request.method, 'GET');
           return jsonAnswer([{'id': 'order-1', 'orderStatus': 'quality_check'}]);
-        case '/api/orders/order-1/dispatch':
-          expect(request.method, 'PATCH');
-          expect(request.headers['authorization'], 'Bearer admin-session');
-          expect(body, {'driverName': 'Real Partner', 'driverPhone': '9876543210',
-            'vehicleNumber': 'UP32AB1234', 'estimatedDelivery': '45 minutes'});
-          return jsonAnswer({'id': 'order-1', 'orderStatus': 'out_for_delivery'});
         case '/api/orders/order-1/status':
           expect(request.method, 'PATCH');
           expect(request.headers['authorization'], 'Bearer admin-session');
+          if (body is Map && body['status'] == 'out_for_delivery') {
+            expect(body, {'status': 'out_for_delivery', 'driverName': 'Real Partner',
+              'driverPhone': '9876543210', 'vehicleNumber': 'UP32AB1234'});
+            return jsonAnswer({'id': 'order-1', 'orderStatus': 'out_for_delivery'});
+          }
           expect(body, {'status': 'delivered'});
           return jsonAnswer({'id': 'order-1', 'orderStatus': 'delivered'});
         default:
@@ -92,11 +91,9 @@ void main() {
     expect((await api.currentAdmin(session.token)).email, 'ops@example.test');
     expect((await api.adminOrders(session.token)).single['id'], 'order-1');
     expect((await api.dispatchOrder('order-1', session.token, driverName: 'Real Partner',
-      driverPhone: '9876543210', vehicleNumber: 'UP32AB1234',
-      estimatedDelivery: '45 minutes'))['orderStatus'], 'out_for_delivery');
+      driverPhone: '9876543210', vehicleNumber: 'UP32AB1234'))['orderStatus'], 'out_for_delivery');
     expect((await api.updateAdminOrderStatus('order-1', session.token, 'delivered'))['orderStatus'], 'delivered');
-    expect(requests, contains('PATCH /api/orders/order-1/dispatch'));
-    expect(requests, contains('PATCH /api/orders/order-1/status'));
+    expect(requests.where((request) => request == 'PATCH /api/orders/order-1/status'), hasLength(2));
   });
 
   test('admin can manage homepage banners through the secured CMS contract', () async {

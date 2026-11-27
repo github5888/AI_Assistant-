@@ -74,4 +74,70 @@ void main() {
     expect(find.text('Open map'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('admin can dispatch an order using the status endpoint without a Flutter error', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 800);
+    addTearDown(tester.view.reset);
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      expect(request.headers['authorization'], 'Bearer admin-test-token');
+      if (request.url.path == '/api/auth/me') {
+        return http.Response(jsonEncode({'user': {
+          'id': 'admin-1', 'name': 'Admin', 'email': 'admin@example.test', 'role': 'admin',
+        }}), 200);
+      }
+      if (request.url.path == '/api/orders' && request.method == 'GET') {
+        return http.Response(jsonEncode([{
+          'id': 'order-dispatch', 'orderNumber': 'CLR-2026-9881',
+          'orderStatus': 'quality_check', 'items': [],
+          'shippingAddress': {'name': 'Buyer', 'addressLine1': 'Gomti Nagar'},
+        }]), 200);
+      }
+      if (request.url.path == '/api/orders/order-dispatch/status') {
+        expect(request.method, 'PATCH');
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['status'], 'out_for_delivery');
+        expect(body['driverName'], 'Real Partner');
+        expect(body['driverPhone'], '9876543210');
+        expect(body['vehicleNumber'], 'UP32AB1234');
+        expect(body.containsKey('estimatedDelivery'), isFalse);
+        return http.Response(jsonEncode({
+          'id': 'order-dispatch', 'orderNumber': 'CLR-2026-9881',
+          'orderStatus': 'out_for_delivery', 'driverName': 'Real Partner',
+          'driverPhone': '9876543210', 'vehicleNumber': 'UP32AB1234', 'items': [],
+          'shippingAddress': {'name': 'Buyer', 'addressLine1': 'Gomti Nagar'},
+        }), 200);
+      }
+      throw StateError('Unexpected request: ${request.method} ${request.url}');
+    }));
+    final state = AppState(api: api);
+    final vault = _AdminVault();
+    addTearDown(api.close);
+    addTearDown(state.dispose);
+
+    await tester.pumpWidget(MaterialApp(home: AppScope(notifier: state,
+      child: AdminDispatchScreen(vault: vault))));
+    await tester.pumpAndSettle();
+    final status = find.byType(DropdownButtonFormField<String>).first;
+    await tester.ensureVisible(status);
+    await tester.tap(status);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('4 · Out for delivery').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dispatch order'), findsOneWidget);
+    final fields = find.byType(TextField);
+    for (final entry in const [
+      (0, 'Real Partner'), (1, '9876543210'), (2, 'UP32AB1234'),
+    ]) {
+      final field = fields.at(entry.$1);
+      await tester.ensureVisible(field);
+      await tester.enterText(field, entry.$2);
+    }
+    await tester.tap(find.text('Confirm dispatch'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Assigned delivery partner'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

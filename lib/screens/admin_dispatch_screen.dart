@@ -184,7 +184,7 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     try {
       final updated = await _api.dispatchOrder(id, session.token,
         driverName: fields['name']!, driverPhone: fields['phone']!,
-        vehicleNumber: fields['vehicle']!, estimatedDelivery: fields['eta']!);
+        vehicleNumber: fields['vehicle']!);
       _replaceOrder(updated);
     } on StoreApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -200,7 +200,6 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     final name = TextEditingController(text: hasFallbackPartner ? '' : _text(order['driverName']));
     final phone = TextEditingController(text: hasFallbackPartner ? '' : _text(order['driverPhone']));
     final vehicle = TextEditingController(text: hasFallbackPartner ? '' : _text(order['vehicleNumber']));
-    final eta = TextEditingController(text: _text(order['estimatedDelivery']));
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (context) => AlertDialog(
@@ -209,7 +208,6 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           _DispatchField(controller: name, label: 'Delivery partner name'),
           _DispatchField(controller: phone, label: 'Partner phone', keyboardType: TextInputType.phone),
           _DispatchField(controller: vehicle, label: 'Vehicle number'),
-          _DispatchField(controller: eta, label: 'Estimated delivery'),
           const Align(alignment: Alignment.centerLeft, child: Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text('Use the real assigned partner details. No live GPS is sent by this action.',
@@ -220,14 +218,14 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           FilledButton(onPressed: () {
             final values = {'name': name.text.trim(), 'phone': phone.text.trim(),
-              'vehicle': vehicle.text.trim(), 'eta': eta.text.trim()};
+              'vehicle': vehicle.text.trim()};
             if (values.values.any((value) => value.isEmpty)) return;
             Navigator.pop(context, values);
           }, child: const Text('Confirm dispatch')),
         ],
       ),
     );
-    name.dispose(); phone.dispose(); vehicle.dispose(); eta.dispose();
+    name.dispose(); phone.dispose(); vehicle.dispose();
     return result;
   }
 

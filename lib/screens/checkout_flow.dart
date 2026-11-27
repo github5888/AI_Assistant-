@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,9 +33,6 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   final _city = TextEditingController();
   final _street = TextEditingController();
   final _landmark = TextEditingController();
-  final _verification = TextEditingController();
-  final _random = math.Random.secure();
-  late String _verificationCode;
   String _addressType = 'Home';
   String _paymentMethod = 'cod';
   bool _addressSaved = false;
@@ -55,7 +51,6 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
   void initState() {
     super.initState();
     _name = TextEditingController();
-    _verificationCode = (100 + _random.nextInt(900)).toString();
   }
 
   @override
@@ -99,7 +94,7 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_name, _mobile, _pin, _city, _street, _landmark, _verification]) {
+    for (final controller in [_name, _mobile, _pin, _city, _street, _landmark]) {
       controller.dispose();
     }
     super.dispose();
@@ -257,10 +252,6 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
     }
     if (payment != 'cod' && state.paymentGateway == null) {
       setState(() => _submitError = 'Secure online checkout is not available in this app build.');
-      return;
-    }
-    if (payment == 'cod' && _verification.text.trim() != _verificationCode) {
-      setState(() => _submitError = 'Enter the 3-digit verification code shown below.');
       return;
     }
     setState(() { _submitError = null; });
@@ -569,35 +560,6 @@ class _InAppCheckoutScreenState extends State<InAppCheckoutScreen> {
             ? 'Choose your bank in secure checkout' : 'Currently unavailable',
           selected: selectedPayment == 'netbanking', enabled: online,
           onTap: online ? () => setState(() => _paymentMethod = 'netbanking') : null),
-      ],
-      if (selectedPayment == 'cod') ...[
-        const SizedBox(height: 8),
-        const Text('QUICK VERIFICATION', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 6),
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: AppColors.paper,
-              borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.line)),
-            child: Text(_verificationCode, semanticsLabel: 'Verification code $_verificationCode',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 4)),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: TextField(
-            controller: _verification,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
-            decoration: const InputDecoration(labelText: 'Enter code', hintText: '3 digits', isDense: true),
-          )),
-          IconButton(
-            tooltip: 'Generate a new code',
-            onPressed: () => setState(() {
-              _verificationCode = (100 + _random.nextInt(900)).toString();
-              _verification.clear();
-            }),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ]),
       ],
       const SizedBox(height: 12),
       if (_submitError != null) ...[

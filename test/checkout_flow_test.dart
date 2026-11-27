@@ -52,6 +52,8 @@ void main() {
       scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     expect(find.text('ORDER ITEMS'), findsOneWidget);
     expect(find.text('Cash on delivery'), findsOneWidget);
+    expect(find.text('QUICK VERIFICATION'), findsNothing);
+    expect(find.text('Enter code'), findsNothing);
     expect(tester.widget<TextFormField>(find.byType(TextFormField).at(0)).enabled, isTrue);
 
     await tester.tap(find.text('SAVE & DELIVER HERE'));
