@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import 'auth_models.dart';
 import 'data.dart';
@@ -152,6 +153,95 @@ class StoreApi {
   Future<AdminSession> currentAdmin(String token) async {
     final result = await _auth(['me'], token: token);
     return AdminSession.fromJson({...result, 'token': token});
+  }
+
+  Future<List<Map<String, dynamic>>> homeHeroBanners() async {
+    final result = await _get(['content', 'hero_banners']);
+    if (result is! Map || result['data'] is! List) {
+      throw const StoreApiException('The store returned invalid homepage banners.');
+    }
+    return List.unmodifiable((result['data'] as List)
+        .whereType<Map>()
+        .map((banner) => Map<String, dynamic>.unmodifiable(
+          Map<String, dynamic>.from(banner))));
+  }
+
+  Future<void> saveAdminHeroBanners(String token,
+      List<Map<String, dynamic>> banners) async {
+    await _contentRequest('PUT', token, payload: {'data': banners});
+  }
+
+  Future<String> uploadAdminImage(String token, String filePath) async {
+    final request = http.MultipartRequest('POST', base.replace(
+      pathSegments: ['api', 'upload'],
+    ))..followRedirects = false;
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    try {
+      final extension = filePath.split('.').last.toLowerCase();
+      final mediaType = switch (extension) {
+        'jpg' || 'jpeg' => MediaType('image', 'jpeg'),
+        'png' => MediaType('image', 'png'),
+        'webp' => MediaType('image', 'webp'),
+        _ => throw const StoreApiException('Choose a JPG, PNG or WebP image.'),
+      };
+      request.files.add(await http.MultipartFile.fromPath('image', filePath,
+        contentType: mediaType));
+      final response = await http.Response.fromStream(await _client.send(request))
+          .timeout(const Duration(seconds: 45));
+      Map<String, dynamic> result = const {};
+      try {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        if (decoded is Map<String, dynamic>) result = decoded;
+      } on FormatException {
+        throw const StoreApiException('The image service returned invalid data.');
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300 ||
+          result['success'] != true || result['url'] is! String) {
+        final message = result['error'];
+        throw StoreApiException(message is String && message.isNotEmpty
+            ? message : 'The banner image could not be uploaded.', status: response.statusCode);
+      }
+      return result['url'] as String;
+    } on StoreApiException {
+      rethrow;
+    } catch (_) {
+      throw const StoreApiException('Could not upload the banner image. Check your connection and try again.');
+    }
+  }
+
+  Future<Map<String, dynamic>> _contentRequest(String method, String token, {
+    Map<String, Object?>? payload,
+  }) async {
+    final request = http.Request(method,
+      base.replace(pathSegments: ['api', 'content', 'hero_banners']))
+      ..followRedirects = false;
+    request.headers['Accept'] = 'application/json';
+    request.headers['Authorization'] = 'Bearer $token';
+    if (payload != null) {
+      request.headers['Content-Type'] = 'application/json';
+      request.body = jsonEncode(payload);
+    }
+    final http.Response response;
+    try {
+      response = await http.Response.fromStream(await _client.send(request))
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      throw const StoreApiException('Could not reach the homepage content service. Try again.');
+    }
+    Map<String, dynamic> result = const {};
+    try {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      if (decoded is Map<String, dynamic>) result = decoded;
+    } on FormatException {
+      throw const StoreApiException('The homepage content service returned invalid data.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300 || result.isEmpty) {
+      final message = result['error'];
+      throw StoreApiException(message is String && message.isNotEmpty
+          ? message : 'The homepage banners could not be saved.', status: response.statusCode);
+    }
+    return Map.unmodifiable(result);
   }
 
   Future<Map<String, dynamic>> _notificationRequest(String method, List<String> route,

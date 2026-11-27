@@ -14,39 +14,72 @@ class HomeHarvestCarousel extends StatefulWidget {
   State<HomeHarvestCarousel> createState() => _HomeHarvestCarouselState();
 }
 
+class _HomeHeroSlide {
+  const _HomeHeroSlide({required this.tag, required this.title,
+    required this.description, required this.image, required this.light,
+    required this.shade, required this.accent, this.cta = 'Shop the harvest',
+    this.ctaLink = '/shop', this.networkImage = false, this.productIndex});
+
+  final String tag;
+  final String title;
+  final String description;
+  final String image;
+  final Color light;
+  final Color shade;
+  final Color accent;
+  final String cta;
+  final String ctaLink;
+  final bool networkImage;
+  final int? productIndex;
+}
+
 class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
   final _controller = PageController();
   int _active = 0;
 
-  static const _slides = [
-    (
-      tag: 'THE HARVEST',
-      title: 'Khapli\nChakki Atta',
-      description: 'Stoneground whole wheat for everyday rotis.',
-      image: AppImages.khapli,
-      light: Color(0xFFFFF5E5),
-      shade: Color(0xFFF3D39E),
-      accent: Color(0xFF81431D),
-    ),
-    (
-      tag: 'THE PROTEIN BLEND',
-      title: 'High Protein\nAtta',
-      description: 'A blend of wheat, soya and peanut.',
-      image: AppImages.protein,
-      light: Color(0xFFF0F5E8),
-      shade: Color(0xFFC6D8AE),
-      accent: Color(0xFF3C592B),
-    ),
-    (
-      tag: 'THE FAMILY PACK',
-      title: 'Khapli\nFamily Packs',
-      description: 'Larger bags for the whole household.',
-      image: AppImages.handle,
-      light: Color(0xFFFFF1EA),
-      shade: Color(0xFFF0C6AF),
-      accent: Color(0xFF843D2E),
-    ),
+  static const _fallbackSlides = <_HomeHeroSlide>[
+    _HomeHeroSlide(tag: 'THE HARVEST', title: 'Khapli\nChakki Atta',
+      description: 'Stoneground whole wheat for everyday rotis.', image: AppImages.khapli,
+      light: Color(0xFFFFF5E5), shade: Color(0xFFF3D39E), accent: Color(0xFF81431D), productIndex: 0),
+    _HomeHeroSlide(tag: 'THE PROTEIN BLEND', title: 'High Protein\nAtta',
+      description: 'A blend of wheat, soya and peanut.', image: AppImages.protein,
+      light: Color(0xFFF0F5E8), shade: Color(0xFFC6D8AE), accent: Color(0xFF3C592B), productIndex: 1),
+    _HomeHeroSlide(tag: 'THE FAMILY PACK', title: 'Khapli\nFamily Packs',
+      description: 'Larger bags for the whole household.', image: AppImages.handle,
+      light: Color(0xFFFFF1EA), shade: Color(0xFFF0C6AF), accent: Color(0xFF843D2E), productIndex: 2),
   ];
+
+  List<_HomeHeroSlide> _slidesFor(AppState state) {
+    final banners = state.liveHeroBanners;
+    if (banners == null) return _fallbackSlides;
+    const colors = [
+      (Color(0xFFFFF5E5), Color(0xFFF3D39E), Color(0xFF81431D)),
+      (Color(0xFFF0F5E8), Color(0xFFC6D8AE), Color(0xFF3C592B)),
+      (Color(0xFFFFF1EA), Color(0xFFF0C6AF), Color(0xFF843D2E)),
+    ];
+    final activeBanners = banners.where((banner) => banner['isActive'] != false).toList();
+    return List.generate(activeBanners.length, (index) {
+      final banner = activeBanners[index];
+      final palette = colors[index % colors.length];
+      final rawImage = banner['imageUrl'] is String ? (banner['imageUrl'] as String).trim() : '';
+      final parsedImage = Uri.tryParse(rawImage);
+      final image = rawImage.isEmpty ? '' : parsedImage?.hasScheme == true
+          ? rawImage : state.api?.base.resolve(rawImage).toString() ?? rawImage;
+      return _HomeHeroSlide(
+        tag: banner['badge'] is String ? banner['badge'] as String : '',
+        title: banner['headline'] is String ? banner['headline'] as String : 'ItsClear essentials',
+        description: banner['subtitle'] is String ? banner['subtitle'] as String : '',
+        image: image,
+        light: palette.$1,
+        shade: palette.$2,
+        accent: palette.$3,
+        cta: banner['primaryCtaText'] is String && (banner['primaryCtaText'] as String).trim().isNotEmpty
+            ? (banner['primaryCtaText'] as String).trim() : 'Shop now',
+        ctaLink: banner['primaryCtaLink'] is String ? banner['primaryCtaLink'] as String : '/shop',
+        networkImage: rawImage.isNotEmpty,
+      );
+    }).where((slide) => slide.image.isNotEmpty).toList();
+  }
 
   @override
   void dispose() {
@@ -57,6 +90,9 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final slides = _slidesFor(state);
+    if (slides.isEmpty) return const SizedBox.shrink();
+    final activeIndex = _active.clamp(0, slides.length - 1).toInt();
     final scaledTitle = MediaQuery.textScalerOf(context).scale(25);
     final extra = (scaledTitle - 25).clamp(0, 35).toDouble();
     return Column(children: [
@@ -65,10 +101,10 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
         child: PageView.builder(
           key: const ValueKey('home-hero-carousel'),
           controller: _controller,
-          itemCount: _slides.length,
+          itemCount: slides.length,
           onPageChanged: (index) => setState(() => _active = index),
           itemBuilder: (context, index) {
-            final slide = _slides[index];
+            final slide = slides[index];
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 14),
               padding: const EdgeInsets.fromLTRB(16, 12, 12, 7),
@@ -99,6 +135,7 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
                   const SizedBox(width: 5),
                   Expanded(flex: extra > 7 ? 3 : 5, child: _HarvestPack(
                     image: slide.image, shade: slide.shade,
+                    networkImage: slide.networkImage,
                   )),
                 ])),
                 const SizedBox(height: 4),
@@ -111,15 +148,23 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                   onPressed: () {
-                    final product = state.featuredPack(index);
-                    if (product != null) {
-                      pushScreen(context, ProductScreen(product: product));
+                    Product? target;
+                    if (slide.productIndex != null) {
+                      target = state.featuredPack(slide.productIndex!);
+                    } else {
+                      for (final product in state.catalog) {
+                        if (slide.ctaLink.contains(product.id)) target = product;
+                      }
+                    }
+                    final selectedProduct = target;
+                    if (selectedProduct != null) {
+                      pushScreen(context, ProductScreen(product: selectedProduct));
                     } else {
                       state.setCategory(0);
                       state.goTab(1);
                     }
                   },
-                  label: const Text('Shop the harvest'),
+                  label: Text(slide.cta),
                   icon: const Icon(Icons.arrow_forward_rounded, size: 16),
                   iconAlignment: IconAlignment.end,
                 ),
@@ -129,20 +174,20 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
         ),
       ),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        for (var i = 0; i < _slides.length; i++)
+        for (var i = 0; i < slides.length; i++)
           Semantics(
-            selected: i == _active,
+            selected: i == activeIndex,
             button: true,
-            label: 'Harvest slide ${i + 1} of ${_slides.length}',
+            label: 'Harvest slide ${i + 1} of ${slides.length}',
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () => _controller.animateToPage(i,
                 duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic),
               child: SizedBox(width: 44, height: 32, child: Center(child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                width: i == _active ? 22 : 6, height: 5,
+                width: i == activeIndex ? 22 : 6, height: 5,
                 decoration: BoxDecoration(
-                  color: i == _active ? AppColors.ink : const Color(0xFFD7B99E),
+                  color: i == activeIndex ? AppColors.ink : const Color(0xFFD7B99E),
                   borderRadius: BorderRadius.circular(8),
                 ),
               ))),
@@ -154,9 +199,10 @@ class _HomeHarvestCarouselState extends State<HomeHarvestCarousel> {
 }
 
 class _HarvestPack extends StatelessWidget {
-  const _HarvestPack({required this.image, required this.shade});
+  const _HarvestPack({required this.image, required this.shade, this.networkImage = false});
   final String image;
   final Color shade;
+  final bool networkImage;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +220,10 @@ class _HarvestPack extends StatelessWidget {
       )),
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-        child: PackImage(asset: image, cacheWidth: 440),
+        child: networkImage
+            ? Image.network(image, fit: BoxFit.contain, filterQuality: FilterQuality.medium,
+                errorBuilder: (_, __, ___) => PackImage(asset: AppImages.khapli, cacheWidth: 440))
+            : PackImage(asset: image, cacheWidth: 440),
       ),
     ]);
   }

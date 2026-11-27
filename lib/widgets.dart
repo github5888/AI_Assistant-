@@ -301,7 +301,7 @@ class _DockItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -309,8 +309,8 @@ class _DockItem extends StatelessWidget {
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 40,
-                  height: 30,
+                  width: 46,
+                  height: 36,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     gradient: selected ? AppGradients.orange : null,
@@ -327,7 +327,7 @@ class _DockItem extends StatelessWidget {
                   ),
                   child: Icon(
                     spec.icon,
-                    size: 19,
+                    size: 22,
                     color: selected ? Colors.white : const Color(0x9AFFFFFF),
                   ),
                 ),
@@ -354,13 +354,13 @@ class _DockItem extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Text(
               spec.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 color: selected ? AppColors.amber : const Color(0xCFFFFFFF),
               ),

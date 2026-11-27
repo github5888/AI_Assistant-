@@ -12,12 +12,13 @@ The Flutter Android app reads the live itsclear storefront API. The earlier Reac
 | `GET /api/coupons` | Public active coupon list; app checks code, validity window, minimum order, and computes the preview using the website's coupon schema |
 | `GET /api/health` | Store/database status in the guest profile |
 | `GET /api/reviews?productId=:id` | Written reviews on product details; the live endpoint currently returns an empty array. The reader only shows records with a matching product ID, valid rating and comment. |
+| `GET /api/content/hero_banners` | Active homepage carousel banners and their text/image content. |
 
 The default API origin is `https://itsclear.in`. Use `--dart-define=ITSCLEAR_API_BASE_URL=https://your-staging-host.example` with `flutter run` or `flutter build apk --release` to test another HTTPS origin. Android release builds require the `INTERNET` permission in `android/app/src/main/AndroidManifest.xml`; the APK workflow preserves that manifest when generating its matching Gradle runner.
 
 ## Mobile storefront layout
 
-Home opens with a swipeable pack-led banner, compact Orders and Calculator shortcuts, and photo tiles that open the matching Shop filters. Search is accessible in the Home header. Shop puts search and filters above the same card layout. Home and Shop share a lazy, responsive catalog grid. On standard phone widths, cards fit two across with a compact Add button next to the price; larger system fonts use a wider horizontal card. Product thumbnails are decoded near their display size to reduce scrolling memory use. `test/catalog_layout_test.dart` checks layout and basket interaction on narrow phone viewports.
+Home opens with a swipeable pack-led banner, compact Orders and Calculator shortcuts, and photo tiles that open the matching Shop filters. Admins can manage the live hero carousel from the dispatch console using the authenticated `/api/content/hero_banners` CMS and `/api/upload` image endpoint. The app adds a `Manage homepage banners` option for creating, editing, ordering and activating slides, including gallery image upload; its guide recommends 1000 × 1000 px product artwork (transparent PNG preferred, JPG/PNG/WebP up to 10 MB) within a roughly 5:3 banner frame. Search is accessible in the Home header. Shop puts search and filters above the same card layout. Home and Shop share a lazy, responsive catalog grid. On standard phone widths, cards fit two across with a compact Add button next to the price; larger system fonts use a wider horizontal card. Product thumbnails are decoded near their display size to reduce scrolling memory use. `test/catalog_layout_test.dart` checks layout and basket interaction on narrow phone viewports.
 
 ## Customer sign-in
 

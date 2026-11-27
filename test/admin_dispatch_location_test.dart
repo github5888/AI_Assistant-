@@ -66,6 +66,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('CLR-2026-4214'), findsOneWidget);
+    expect(find.text('Manage homepage banners'), findsOneWidget);
     expect(find.text('No saved pin · address search'), findsOneWidget);
     expect(find.text('Saved pin · 26.862609, 81.048675'), findsOneWidget);
     expect(find.text('Open map'), findsNWidgets(2));

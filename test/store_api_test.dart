@@ -99,6 +99,33 @@ void main() {
     expect(requests, contains('PATCH /api/orders/order-1/status'));
   });
 
+  test('admin can manage homepage banners through the secured CMS contract', () async {
+    final banner = {
+      'id': 'banner-1', 'badge': 'HARVEST', 'headline': 'Fresh atta',
+      'subtitle': 'Stoneground daily', 'primaryCtaText': 'Shop now',
+      'primaryCtaLink': '/shop', 'imageUrl': '/uploads/banner.png', 'isActive': true,
+    };
+    final api = StoreApi('https://example.test', client: MockClient((request) async {
+      if (request.url.path == '/api/content/hero_banners' && request.method == 'GET') {
+        expect(request.headers['authorization'], isNull);
+        return jsonAnswer({'key': 'hero_banners', 'data': [banner]});
+      }
+      if (request.url.path == '/api/content/hero_banners' && request.method == 'PUT') {
+        expect(request.headers['authorization'], 'Bearer admin-banner-token');
+        final payload = jsonDecode((request as http.Request).body) as Map<String, dynamic>;
+        expect(payload['data'], [banner]);
+        expect(payload.containsKey('userId'), isFalse);
+        return jsonAnswer({'key': 'hero_banners', 'data': [banner]});
+      }
+      throw StateError('Unexpected request: ${request.method} ${request.url}');
+    }));
+    addTearDown(api.close);
+
+    final banners = await api.homeHeroBanners();
+    expect(banners.single['headline'], 'Fresh atta');
+    await api.saveAdminHeroBanners('admin-banner-token', banners);
+  });
+
   test('validates coupons from the public active-coupon list contract', () async {
     final api = StoreApi('https://example.test', client: MockClient((request) async {
       expect(request.method, 'GET');

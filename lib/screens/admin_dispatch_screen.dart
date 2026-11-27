@@ -7,6 +7,7 @@ import '../auth_platform.dart';
 import '../store_api.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'admin_home_banners_screen.dart';
 
 /// Admin-only mobile view of the dispatch/status APIs used by the website.
 /// It deliberately does not imply a separate courier login or live GPS service.
@@ -318,6 +319,13 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           IconButton(tooltip: 'Sign out', onPressed: _working ? null : _signOut,
             icon: const Icon(Icons.logout_rounded)),
         ])),
+        SectionCard(padding: const EdgeInsets.symmetric(vertical: 3), child: InfoRow(
+          icon: Icons.photo_library_outlined,
+          title: 'Manage homepage banners',
+          subtitle: 'Create slides and upload images from gallery',
+          onTap: () => pushScreen(context, AdminHomeBannersScreen(
+            api: _api, adminToken: session.token)),
+        )),
         if (_error != null) StoreNotice(message: _error!, onRetry: _loadOrders),
         if (_loadingOrders && _orders.isEmpty)
           const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator())),

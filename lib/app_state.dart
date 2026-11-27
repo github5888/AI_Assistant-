@@ -155,6 +155,8 @@ class AppState extends ChangeNotifier {
   bool catalogError = false;
   bool? storeOnline;
   StoreConfig? storeConfig;
+  List<Map<String, dynamic>>? _liveHeroBanners;
+  List<Map<String, dynamic>>? get liveHeroBanners => _liveHeroBanners;
   List<StoreCoupon> liveCoupons = const [];
   bool isLoadingCoupons = false;
   bool couponListError = false;
@@ -171,10 +173,26 @@ class AppState extends ChangeNotifier {
     isLoadingCatalog = true;
     catalogError = false;
     notifyListeners();
-    await Future.wait([_loadCatalog(api!), _loadConfig(api!), _loadHealth(api!), _loadCoupons(api!)]);
+    await Future.wait([_loadCatalog(api!), _loadConfig(api!), _loadHealth(api!), _loadCoupons(api!),
+      _loadHeroBanners(api!)]);
     if (_disposed) return;
     isLoadingCatalog = false;
     notifyListeners();
+  }
+
+  Future<void> refreshHomeHeroBanners() async {
+    final service = api;
+    if (service == null || _disposed) return;
+    await _loadHeroBanners(service);
+  }
+
+  Future<void> _loadHeroBanners(StoreApi service) async {
+    try {
+      _liveHeroBanners = await service.homeHeroBanners();
+    } catch (_) {
+      _liveHeroBanners = null;
+    }
+    if (!_disposed) notifyListeners();
   }
 
   Future<void> _loadCatalog(StoreApi service) async {
