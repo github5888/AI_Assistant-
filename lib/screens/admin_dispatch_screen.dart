@@ -195,38 +195,16 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
     }
   }
 
-  Future<Map<String, String>?> _askDispatchDetails(Map<String, dynamic> order) async {
+  Future<Map<String, String>?> _askDispatchDetails(Map<String, dynamic> order) {
     final hasFallbackPartner = _hasFallbackPartner(order);
-    final name = TextEditingController(text: hasFallbackPartner ? '' : _text(order['driverName']));
-    final phone = TextEditingController(text: hasFallbackPartner ? '' : _text(order['driverPhone']));
-    final vehicle = TextEditingController(text: hasFallbackPartner ? '' : _text(order['vehicleNumber']));
-    final result = await showDialog<Map<String, String>>(
+    return showDialog<Map<String, String>>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Dispatch order'),
-        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _DispatchField(controller: name, label: 'Delivery partner name'),
-          _DispatchField(controller: phone, label: 'Partner phone', keyboardType: TextInputType.phone),
-          _DispatchField(controller: vehicle, label: 'Vehicle number'),
-          const Align(alignment: Alignment.centerLeft, child: Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text('Use the real assigned partner details. No live GPS is sent by this action.',
-              style: TextStyle(fontSize: 11, color: AppColors.muted)),
-          )),
-        ])),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: () {
-            final values = {'name': name.text.trim(), 'phone': phone.text.trim(),
-              'vehicle': vehicle.text.trim()};
-            if (values.values.any((value) => value.isEmpty)) return;
-            Navigator.pop(context, values);
-          }, child: const Text('Confirm dispatch')),
-        ],
+      builder: (context) => _DispatchDetailsDialog(
+        name: hasFallbackPartner ? '' : _text(order['driverName']),
+        phone: hasFallbackPartner ? '' : _text(order['driverPhone']),
+        vehicle: hasFallbackPartner ? '' : _text(order['vehicleNumber']),
       ),
     );
-    name.dispose(); phone.dispose(); vehicle.dispose();
-    return result;
   }
 
   void _replaceOrder(Map<String, dynamic> updated) {
@@ -525,6 +503,55 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   static Map? _asMap(Object? value) => value is Map ? value : null;
   static String _text(Object? value, {String fallback = ''}) =>
       value is String && value.trim().isNotEmpty ? value.trim() : fallback;
+}
+
+class _DispatchDetailsDialog extends StatefulWidget {
+  const _DispatchDetailsDialog({required this.name, required this.phone, required this.vehicle});
+
+  final String name;
+  final String phone;
+  final String vehicle;
+
+  @override
+  State<_DispatchDetailsDialog> createState() => _DispatchDetailsDialogState();
+}
+
+class _DispatchDetailsDialogState extends State<_DispatchDetailsDialog> {
+  late final TextEditingController _name = TextEditingController(text: widget.name);
+  late final TextEditingController _phone = TextEditingController(text: widget.phone);
+  late final TextEditingController _vehicle = TextEditingController(text: widget.vehicle);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    _vehicle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Dispatch order'),
+    content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      _DispatchField(controller: _name, label: 'Delivery partner name'),
+      _DispatchField(controller: _phone, label: 'Partner phone', keyboardType: TextInputType.phone),
+      _DispatchField(controller: _vehicle, label: 'Vehicle number'),
+      const Align(alignment: Alignment.centerLeft, child: Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: Text('Use the real assigned partner details. No live GPS is sent by this action.',
+          style: TextStyle(fontSize: 11, color: AppColors.muted)),
+      )),
+    ])),
+    actions: [
+      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+      FilledButton(onPressed: () {
+        final values = {'name': _name.text.trim(), 'phone': _phone.text.trim(),
+          'vehicle': _vehicle.text.trim()};
+        if (values.values.any((value) => value.isEmpty)) return;
+        Navigator.pop(context, values);
+      }, child: const Text('Confirm dispatch')),
+    ],
+  );
 }
 
 class _DispatchField extends StatelessWidget {

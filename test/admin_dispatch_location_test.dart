@@ -126,7 +126,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Dispatch order'), findsOneWidget);
-    final fields = find.byType(TextField);
+    final fields = find.descendant(of: find.byType(AlertDialog), matching: find.byType(TextField));
     for (final entry in const [
       (0, 'Real Partner'), (1, '9876543210'), (2, 'UP32AB1234'),
     ]) {
