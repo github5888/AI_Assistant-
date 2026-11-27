@@ -123,17 +123,8 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pumpAndSettle();
     expect(find.text('DELIVERY DETAILS SAVED'), findsOneWidget);
-    final codeFinder = find.byWidgetPredicate((widget) =>
-      widget is Text && RegExp(r'^\d{3}$').hasMatch(widget.data ?? ''));
-    await tester.scrollUntilVisible(codeFinder, 280,
-      scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
-    final code = tester.widget<Text>(codeFinder).data!;
-    final verificationField = find.byWidgetPredicate((widget) =>
-      widget is TextField && widget.decoration?.hintText == '3 digits');
-    await tester.ensureVisible(verificationField);
-    await tester.enterText(verificationField, code);
-    FocusManager.instance.primaryFocus?.unfocus();
-    await tester.pumpAndSettle();
+    expect(find.text('QUICK VERIFICATION'), findsNothing);
+    expect(find.text('Enter code'), findsNothing);
     final submit = find.text('Place order with cash on delivery');
     await tester.scrollUntilVisible(submit, 280, scrollable: find.descendant(of: find.byType(InAppCheckoutScreen), matching: find.byType(Scrollable)).first);
     final appState = AppScope.of(tester.element(submit));
