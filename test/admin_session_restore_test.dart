@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -58,6 +59,8 @@ void main() {
     expect(vault.token, 'saved-admin-token');
     final state = AppScope.of(tester.element(find.text('Dispatch console')));
     state.showTopNotice = (title, body) => notices.add((title, body));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
     newOrderArrived = true;
     await tester.pump(const Duration(seconds: 20));
     await tester.pumpAndSettle();
