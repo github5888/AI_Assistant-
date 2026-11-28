@@ -11,6 +11,7 @@ import 'push_notifications.dart';
 import 'store_api.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'screens/admin_dispatch_screen.dart';
 import 'screens/commerce_screens.dart';
 import 'screens/checkout_flow.dart';
 import 'screens/home_screen.dart';
@@ -34,18 +35,20 @@ Future<void> main() async {
   runApp(ItsClearApp(api: api, pushNotifications: pushNotifications,
     sessionVault: AndroidSessionVault(api.base),
     addressVault: AndroidAddressVault(api.base),
+    adminSessionVault: AndroidAdminSessionVault(api.base),
     googleIdentity: googleWebClientId.isEmpty ? null : NativeGoogleIdentity(googleWebClientId),
     paymentGateway: NativeRazorpayGateway()));
 }
 
 class ItsClearApp extends StatefulWidget {
   const ItsClearApp({super.key, this.api, this.sessionVault, this.addressVault,
-    this.googleIdentity, this.paymentGateway, this.pushNotifications});
+    this.adminSessionVault, this.googleIdentity, this.paymentGateway, this.pushNotifications});
 
   final StoreApi? api;
   final PushNotificationService? pushNotifications;
   final SessionVault? sessionVault;
   final AddressVault? addressVault;
+  final SessionVault? adminSessionVault;
   final GoogleIdentity? googleIdentity;
   final PaymentGateway? paymentGateway;
 
@@ -55,6 +58,10 @@ class ItsClearApp extends StatefulWidget {
 
 class _ItsClearAppState extends State<ItsClearApp> {
   late final AppState _state;
+  final GlobalKey<NavigatorState> _fallbackNavigatorKey = GlobalKey<NavigatorState>();
+
+  GlobalKey<NavigatorState> get _navigatorKey =>
+      widget.pushNotifications?.navigatorKey ?? _fallbackNavigatorKey;
 
   @override
   void initState() {
@@ -68,6 +75,26 @@ class _ItsClearAppState extends State<ItsClearApp> {
     _state.restoreSession();
     _state.restoreSavedAddress();
     _state.refreshStore();
+    final api = widget.api;
+    final adminVault = widget.adminSessionVault ??
+        (api == null ? null : AndroidAdminSessionVault(api.base));
+    if (adminVault != null) unawaited(_restoreAdminConsole(adminVault));
+  }
+
+  Future<void> _restoreAdminConsole(SessionVault vault) async {
+    try {
+      final token = await vault.read();
+      if (token == null || token.isEmpty || !mounted) return;
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final navigator = _navigatorKey.currentState;
+      if (navigator == null) return;
+      await navigator.push<void>(MaterialPageRoute<void>(
+        builder: (_) => AdminDispatchScreen(vault: vault),
+      ));
+    } catch (_) {
+      // A missing or unreadable admin token must not block the storefront.
+    }
   }
 
   @override
@@ -85,7 +112,7 @@ class _ItsClearAppState extends State<ItsClearApp> {
     return AppScope(
       notifier: _state,
       child: MaterialApp(
-        navigatorKey: widget.pushNotifications?.navigatorKey,
+        navigatorKey: _navigatorKey,
         title: 'itsclear',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),

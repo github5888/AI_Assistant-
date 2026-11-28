@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
@@ -204,6 +205,10 @@ class _HarvestPack extends StatelessWidget {
   final Color shade;
   final bool networkImage;
 
+  int _cacheWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context) * .55)
+          .clamp(320, 960).round();
+
   @override
   Widget build(BuildContext context) {
     return Stack(fit: StackFit.expand, children: [
@@ -221,9 +226,17 @@ class _HarvestPack extends StatelessWidget {
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
         child: networkImage
-            ? Image.network(image, fit: BoxFit.contain, filterQuality: FilterQuality.medium,
-                errorBuilder: (_, __, ___) => PackImage(asset: AppImages.khapli, cacheWidth: 440))
+            ? CachedNetworkImage(
+                imageUrl: image,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.medium,
+                maxWidthDiskCache: _cacheWidth(context),
+                memCacheWidth: _cacheWidth(context),
+                placeholder: (_, __) => PackImage(asset: AppImages.khapli, cacheWidth: 440),
+                errorWidget: (_, __, ___) => PackImage(asset: AppImages.khapli, cacheWidth: 440),
+              )
             : PackImage(asset: image, cacheWidth: 440),
+
       ),
     ]);
   }

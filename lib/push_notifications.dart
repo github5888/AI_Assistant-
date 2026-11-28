@@ -40,6 +40,8 @@ class PushNotificationService {
   StreamSubscription<RemoteMessage>? _foregroundSubscription;
   StreamSubscription<RemoteMessage>? _openedSubscription;
   StreamSubscription<String>? _tokenSubscription;
+  OverlayEntry? _foregroundNotice;
+  Timer? _foregroundNoticeTimer;
 
   Future<void> initialize(AppState state) async {
     _state = state;
@@ -173,16 +175,36 @@ class PushNotificationService {
   void _showForegroundMessage(RemoteMessage message) {
     final token = _state?.customerToken;
     if (token != null) unawaited(_refreshUnreadCount(token));
-    final context = navigatorKey.currentContext;
-    if (context == null) return;
+    final overlay = navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
     final title = message.notification?.title ?? message.data['title']?.toString() ?? 'itsclear update';
     final body = message.notification?.body ?? message.data['message']?.toString() ?? '';
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    messenger?.showSnackBar(SnackBar(
-      content: Text(body.isEmpty ? title : '$title\n$body', maxLines: 3, overflow: TextOverflow.ellipsis),
-      action: message.data.isEmpty ? null : SnackBarAction(
-        label: 'OPEN', onPressed: () => _handleMessageTap(message)),
+    _dismissForegroundNotice();
+    final canOpen = message.data.isNotEmpty;
+    _foregroundNotice = OverlayEntry(builder: (_) => Positioned(
+      top: 0,
+      left: 12,
+      right: 12,
+      child: SafeArea(bottom: false, child: _ForegroundNotificationCard(
+        title: title,
+        body: body,
+        canOpen: canOpen,
+        onOpen: canOpen ? () {
+          _dismissForegroundNotice();
+          _handleMessageTap(message);
+        } : null,
+        onDismiss: _dismissForegroundNotice,
+      )),
     ));
+    overlay.insert(_foregroundNotice!);
+    _foregroundNoticeTimer = Timer(const Duration(seconds: 5), _dismissForegroundNotice);
+  }
+
+  void _dismissForegroundNotice() {
+    _foregroundNoticeTimer?.cancel();
+    _foregroundNoticeTimer = null;
+    _foregroundNotice?.remove();
+    _foregroundNotice = null;
   }
 
   void _handleMessageTap(RemoteMessage message) =>
@@ -268,6 +290,7 @@ class PushNotificationService {
   }
 
   Future<void> dispose() async {
+    _dismissForegroundNotice();
     if (_state != null) {
       _state!.removeListener(_onStateChanged);
       _state!.notificationOpener = null;
@@ -277,4 +300,59 @@ class PushNotificationService {
     await _openedSubscription?.cancel();
     await _tokenSubscription?.cancel();
   }
+}
+
+class _ForegroundNotificationCard extends StatelessWidget {
+  const _ForegroundNotificationCard({required this.title, required this.body,
+    required this.canOpen, required this.onOpen, required this.onDismiss});
+
+  final String title;
+  final String body;
+  final bool canOpen;
+  final VoidCallback? onOpen;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    elevation: 12,
+    shadowColor: const Color(0x33101A3A),
+    borderRadius: BorderRadius.circular(18),
+    child: InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(width: 36, height: 36,
+            decoration: BoxDecoration(color: const Color(0xFFFFF1DF),
+              borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.notifications_active_rounded,
+              color: Color(0xFFB97712), size: 20)),
+          const SizedBox(width: 11),
+          Expanded(child: Padding(padding: const EdgeInsets.only(top: 1),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                  color: Color(0xFF101A3A))),
+              if (body.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(body, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, height: 1.25,
+                    color: Color(0xFF596274))),
+              ],
+              if (canOpen) ...[
+                const SizedBox(height: 5),
+                const Text('TAP TO OPEN', style: TextStyle(fontSize: 10,
+                  letterSpacing: .6, fontWeight: FontWeight.w900,
+                  color: Color(0xFFB97712))),
+              ],
+            ]))),
+          IconButton(onPressed: onDismiss, tooltip: 'Dismiss notification',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF596274))),
+        ]),
+      ),
+    ),
+  );
 }

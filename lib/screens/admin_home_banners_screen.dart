@@ -78,9 +78,9 @@ class _AdminHomeBannersScreenState extends State<AdminHomeBannersScreen> {
     try {
       final picked = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 2400,
-        maxHeight: 2400,
-        imageQuality: 92,
+        maxWidth: 1440,
+        maxHeight: 900,
+        imageQuality: 82,
       );
       if (picked == null || !mounted) return;
       if (await picked.length() > 10 * 1024 * 1024) {
@@ -145,7 +145,7 @@ class _AdminHomeBannersScreenState extends State<AdminHomeBannersScreen> {
           const Text('Banner image guide', style: TextStyle(
             fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.ink)),
           const SizedBox(height: 6),
-          const Text('The mobile banner frame is about 1200 × 720 px (5:3). Upload the product visual for the right side: 1000 × 1000 px is recommended; transparent PNG works best. JPG, PNG or WebP, max 10 MB. Headline and copy are placed separately on the left.',
+          const Text('The mobile banner frame is about 1200 × 720 px (5:3). Upload the product visual for the right side: 1000 × 1000 px is recommended; transparent PNG works best. JPG, PNG or WebP, max 10 MB. Gallery images are resized on-device to reduce upload and loading time. Headline and copy are placed separately on the left.',
             style: TextStyle(fontSize: 13, height: 1.45, color: AppColors.muted)),
         ])),
         if (_error != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 20),
