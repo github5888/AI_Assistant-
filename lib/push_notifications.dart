@@ -46,6 +46,7 @@ class PushNotificationService {
   Future<void> initialize(AppState state) async {
     _state = state;
     state.notificationOpener = (data) async => _handleMessageData(data);
+    state.showTopNotice = (title, body) => showTopNotice(title, body);
     state.refreshPushRegistration = () async {
       final token = state.customerToken;
       if (token != null) await _register(token);
@@ -175,12 +176,16 @@ class PushNotificationService {
   void _showForegroundMessage(RemoteMessage message) {
     final token = _state?.customerToken;
     if (token != null) unawaited(_refreshUnreadCount(token));
-    final overlay = navigatorKey.currentState?.overlay;
-    if (overlay == null) return;
     final title = message.notification?.title ?? message.data['title']?.toString() ?? 'itsclear update';
     final body = message.notification?.body ?? message.data['message']?.toString() ?? '';
-    _dismissForegroundNotice();
     final canOpen = message.data.isNotEmpty;
+    showTopNotice(title, body, onOpen: canOpen ? () => _handleMessageTap(message) : null);
+  }
+
+  void showTopNotice(String title, String body, {VoidCallback? onOpen}) {
+    final overlay = navigatorKey.currentState?.overlay;
+    if (overlay == null) return;
+    _dismissForegroundNotice();
     _foregroundNotice = OverlayEntry(builder: (_) => Positioned(
       top: 0,
       left: 12,
@@ -188,11 +193,11 @@ class PushNotificationService {
       child: SafeArea(bottom: false, child: _ForegroundNotificationCard(
         title: title,
         body: body,
-        canOpen: canOpen,
-        onOpen: canOpen ? () {
+        canOpen: onOpen != null,
+        onOpen: onOpen == null ? null : () {
           _dismissForegroundNotice();
-          _handleMessageTap(message);
-        } : null,
+          onOpen();
+        },
         onDismiss: _dismissForegroundNotice,
       )),
     ));
@@ -295,6 +300,7 @@ class PushNotificationService {
       _state!.removeListener(_onStateChanged);
       _state!.notificationOpener = null;
       _state!.refreshPushRegistration = null;
+      _state!.showTopNotice = null;
     }
     await _foregroundSubscription?.cancel();
     await _openedSubscription?.cancel();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -20,7 +22,7 @@ class AdminDispatchScreen extends StatefulWidget {
   State<AdminDispatchScreen> createState() => _AdminDispatchScreenState();
 }
 
-class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
+class _AdminDispatchScreenState extends State<AdminDispatchScreen> with WidgetsBindingObserver {
   SessionVault get _vault => widget.vault;
   final _email = TextEditingController();
   final _otp = TextEditingController();
@@ -31,6 +33,9 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   bool _restoring = true;
   bool _working = false;
   bool _loadingOrders = false;
+  bool _hasOrderSnapshot = false;
+  Set<String> _knownOrderIds = <String>{};
+  Timer? _orderPollTimer;
   bool _usePassword = true;
   String? _error;
 
@@ -43,15 +48,34 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _restoreAdmin();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _orderPollTimer?.cancel();
     _email.dispose();
     _otp.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _session != null) {
+      unawaited(_loadOrders(announceNewOrders: true));
+    }
+  }
+
+  void _startOrderPolling() {
+    if (_orderPollTimer != null || _session == null) return;
+    _orderPollTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (!mounted || _session == null ||
+          WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) return;
+      unawaited(_loadOrders(announceNewOrders: true));
+    });
   }
 
   Future<void> _restoreAdmin() async {
@@ -136,23 +160,43 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
   }
 
   Future<void> _signOut() async {
+    _orderPollTimer?.cancel();
+    _orderPollTimer = null;
+    _knownOrderIds = <String>{};
+    _hasOrderSnapshot = false;
     await _vault.clear();
     if (mounted) setState(() { _session = null; _orders = const []; _challenge = null; _error = null; });
   }
 
-  Future<void> _loadOrders() async {
+  Future<void> _loadOrders({bool announceNewOrders = false}) async {
     final session = _session;
-    if (session == null) return;
+    if (session == null || _loadingOrders) return;
     setState(() { _loadingOrders = true; _error = null; });
     try {
       final orders = await _api.adminOrders(session.token);
-      if (mounted && _session?.id == session.id) setState(() => _orders = orders);
+      if (mounted && _session?.id == session.id) {
+        final currentIds = orders.map((order) => order['id'])
+            .whereType<String>().where((id) => id.isNotEmpty).toSet();
+        final newOrderCount = _hasOrderSnapshot
+            ? currentIds.difference(_knownOrderIds).length : 0;
+        _knownOrderIds = currentIds;
+        _hasOrderSnapshot = true;
+        setState(() => _orders = orders);
+        if (announceNewOrders && newOrderCount > 0) {
+          final state = AppScope.of(context);
+          final orderWord = newOrderCount == 1 ? 'order' : 'orders';
+          final verb = newOrderCount == 1 ? 'is' : 'are';
+          state.showTopNotice?.call('New order received',
+              '$newOrderCount new $orderWord $verb ready in the dispatch console.');
+        }
+      }
     } on StoreApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
       if (mounted) setState(() => _error = 'Orders could not be loaded. Pull to retry.');
     } finally {
       if (mounted) setState(() => _loadingOrders = false);
+      _startOrderPolling();
     }
   }
 
@@ -302,6 +346,12 @@ class _AdminDispatchScreenState extends State<AdminDispatchScreen> {
           onTap: () => pushScreen(context, AdminHomeBannersScreen(
             api: _api, adminToken: session.token)),
         )),
+        const Padding(padding: EdgeInsets.fromLTRB(18, 0, 18, 8), child: Row(children: [
+          Icon(Icons.sync_rounded, size: 15, color: AppColors.muted),
+          SizedBox(width: 7),
+          Expanded(child: Text('New orders are checked every 20 seconds while this console is open.',
+            style: TextStyle(fontSize: 11, color: AppColors.muted))),
+        ])),
         if (_error != null) StoreNotice(message: _error!, onRetry: _loadOrders),
         if (_loadingOrders && _orders.isEmpty)
           const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator())),
