@@ -224,8 +224,14 @@ class _SignInScreenState extends State<SignInScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(gradient: AppGradients.navy, borderRadius: BorderRadius.circular(24)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('itsclear.',
-                style: TextStyle(color: AppColors.amber, fontSize: 20, fontWeight: FontWeight.w900)),
+              Container(
+                width: 160,
+                height: 70,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: Image.asset('assets/images/itsclear-logo.png', fit: BoxFit.contain,
+                  semanticLabel: 'itsclear logo'),
+              ),
               const SizedBox(height: 12),
               Text(linking ? 'Link your Google account' : registering ? 'Join itsclear' : 'Welcome to itsclear',
                 style: const TextStyle(color: Colors.white, fontSize: 26, height: 1.13, fontWeight: FontWeight.w800)),

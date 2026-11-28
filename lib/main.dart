@@ -86,7 +86,7 @@ class _ItsClearAppState extends State<ItsClearApp> {
       notifier: _state,
       child: MaterialApp(
         navigatorKey: widget.pushNotifications?.navigatorKey,
-        title: 'itsclear™',
+        title: 'itsclear',
         debugShowCheckedModeBanner: false,
         theme: buildTheme(),
         home: const PhoneShell(),

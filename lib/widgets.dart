@@ -141,40 +141,16 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 29,
-          height: 29,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: AppGradients.navy,
-            boxShadow: [
-              BoxShadow(color: Color(0x33101A3A), blurRadius: 12, offset: Offset(0, 4)),
-            ],
-          ),
-          child: const Icon(Icons.eco, size: 16, color: AppColors.goldLight),
-        ),
-        const SizedBox(width: 6),
-        RichText(
-          text: const TextSpan(
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.7,
-              color: AppColors.ink,
-            ),
-            children: [
-              TextSpan(text: 'itsclear'),
-              TextSpan(
-                text: '™',
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ],
+    return Semantics(
+      image: true,
+      label: 'itsclear logo',
+      child: Image.asset(
+        'assets/images/itsclear-logo.png',
+        width: 94,
+        height: 40,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
     );
   }
 }
