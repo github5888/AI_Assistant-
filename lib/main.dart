@@ -85,13 +85,15 @@ class _ItsClearAppState extends State<ItsClearApp> {
     try {
       final token = await vault.read();
       if (token == null || token.isEmpty || !mounted) return;
-      await WidgetsBinding.instance.endOfFrame;
-      if (!mounted) return;
-      final navigator = _navigatorKey.currentState;
-      if (navigator == null) return;
-      await navigator.push<void>(MaterialPageRoute<void>(
-        builder: (_) => AdminDispatchScreen(vault: vault),
-      ));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) return;
+        unawaited(navigator.push<void>(MaterialPageRoute<void>(
+          builder: (_) => AdminDispatchScreen(vault: vault),
+        )));
+      });
+      WidgetsBinding.instance.scheduleFrame();
     } catch (_) {
       // A missing or unreadable admin token must not block the storefront.
     }
