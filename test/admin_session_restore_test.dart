@@ -45,7 +45,9 @@ void main() {
     await tester.pumpWidget(ItsClearApp(api: api, adminSessionVault: vault));
     await tester.pumpAndSettle();
 
-    expect(find.text('itsclear operations'), findsOneWidget);
+    expect(find.text('Dispatch console'), findsOneWidget);
+    expect(find.text('Manage homepage banners'), findsOneWidget);
+    expect(find.text('Admin password'), findsNothing);
     expect(vault.token, 'saved-admin-token');
     expect(tester.takeException(), isNull);
   });
